@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{% if memo_tag %}メモタグ編集{% else %}メモタグ新規作成{% endif %} - 会計システム{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('memo_tags.memo_tags_list') }}">メモタグ一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if memo_tag %}編集{% else %}新規作成{% endif %}</li>
+        </ol>
+    </nav>
+
+    <h1 class="h2 mb-4">{% if memo_tag %}メモタグ編集{% else %}メモタグ新規作成{% endif %}</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{% if memo_tag %}{{ url_for('memo_tags.memo_tag_update', memo_tag_id=memo_tag.id) }}{% else %}{{ url_for('memo_tags.memo_tag_create') }}{% endif %}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">メモタグ名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ memo_tag.name if memo_tag else '' }}" required>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">{% if memo_tag %}更新{% else %}作成{% endif %}</button>
+                    <a href="{{ url_for('memo_tags.memo_tags_list') }}" class="btn btn-secondary">キャンセル</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

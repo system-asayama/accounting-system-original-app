@@ -1,0 +1,883 @@
+{% extends "base.html" %}
+
+{% block title %}振替伝票入力 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+        margin: 0;
+    }
+    
+    /* 発生日セクション */
+    .date-section {
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .date-section label {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .date-section input[type="date"] {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    
+    /* 仕訳エリア */
+    .journal-section {
+        margin-bottom: 2rem;
+    }
+    
+    /* 2カラムヘッダー（借方・貸方） */
+    .journal-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .side-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .column-header {
+        font-weight: bold;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .column-header-sub {
+        font-size: 0.85rem;
+        color: #999;
+        margin-top: 0.25rem;
+    }
+    
+    /* 仕訳行 */
+    .journal-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .journal-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 1.5rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        background-color: #fafafa;
+        position: relative;
+    }
+    
+    .side-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .column-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .field-group input,
+    .field-group select {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+    }
+    
+    .field-group input[type="number"] {
+        text-align: right;
+        font-size: 1rem;
+    }
+    
+    .field-group input::placeholder {
+        color: #999;
+    }
+    
+    .tag-field {
+        position: relative;
+    }
+    
+    .tag-field input {
+        padding-right: 2.5rem;
+    }
+    
+    .tag-icon {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 1.2rem;
+        color: #666;
+    }
+    
+    /* 行追加ボタン */
+    .add-row-btn {
+        margin: 1rem 0;
+        padding: 0.6rem 1.5rem;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: #333;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .add-row-btn:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* 合計セクション */
+    .totals-section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+    
+    .total-side {
+        text-align: center;
+    }
+    
+    .total-label {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    
+    .total-amounts {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .total-row-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .total-amount {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    /* ボタングループ */
+    .button-group {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .btn {
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    
+    .delete-row-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    
+    .delete-row-btn:hover {
+        background-color: #c0392b;
+    }
+    
+    /* Tom Selectのスタイル調整 */
+    .ts-wrapper.full {
+        width: 100%;
+    }
+    
+    .ts-dropdown .option .major-category {
+        font-size: 0.8em;
+        color: #999;
+        margin-left: 0.5em;
+    }
+    
+    /* モバイル対応 - 常に2カラム（借方・貸方）を維持 */
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 1rem;
+        }
+        
+        .journal-header {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .journal-row {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .side-header {
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
+        }
+        
+        .side-content {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+        
+        .column-header {
+            font-size: 0.75rem;
+        }
+        
+        .column-header-sub {
+            font-size: 0.7rem;
+        }
+        
+        .field-group input,
+        .field-group select {
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .totals-section {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="page-header">
+        <h1>振替伝票{% if entry %}編集{% else %}新規入力{% endif %}</h1>
+    </div>
+    
+    <form method="POST" id="journalForm">
+        <!-- 発生日 -->
+        <div class="date-section">
+            <label for="transaction_date">発生日 <span style="color: red;">*</span></label>
+            <input type="date" id="transaction_date" name="transaction_date" 
+                   value="{% if entry %}{{ entry.transaction_date }}{% else %}{{ today }}{% endif %}" required>
+        </div>
+        
+        <!-- 仕訳エリア -->
+        <div class="journal-section">
+            <!-- 2カラムヘッダー（借方・貸方） -->
+            <div class="journal-header">
+                <!-- 借方ヘッダー -->
+                <div class="side-header">
+                    <div class="column-header">
+                        借方勘定科目
+                        <div class="column-header-sub">借方タグ・備考</div>
+                    </div>
+                    <div class="column-header">
+                        借方金額
+                        <div class="column-header-sub">借方税区分・税額</div>
+                    </div>
+                </div>
+                
+                <!-- 貸方ヘッダー -->
+                <div class="side-header">
+                    <div class="column-header">
+                        貸方勘定科目
+                        <div class="column-header-sub">貸方タグ・備考</div>
+                    </div>
+                    <div class="column-header">
+                        貸方金額
+                        <div class="column-header-sub">貸方税区分・税額</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 仕訳行 -->
+            <div class="journal-rows" id="journalRows">
+                <!-- 初期行 -->
+                <div class="journal-row">
+                    <button type="button" class="delete-row-btn" onclick="deleteRow(this)">削除</button>
+                    
+                    <!-- 借方側 -->
+                    <div class="side-content">
+                        <!-- 借方勘定科目・タグ -->
+                        <div class="column-content">
+                            <div class="field-group">
+                                <select class="debit-account" name="debit_account_item_id[]" required>
+                                    <option value="">勘定科目</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <select class="form-control debit-tag" name="debit_tags[]" multiple placeholder="タグ">
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <input type="text" class="form-control debit-memo" name="debit_memo[]" placeholder="備考">
+                            </div>
+                        </div>
+                        
+                        <!-- 借方金額・税区分 -->
+                        <div class="column-content">
+                            <div class="field-group">
+                                <input type="number" class="debit-amount" name="debit_amount[]" 
+                                       min="0" step="1" placeholder="0" required>
+                            </div>
+                            <div class="field-group">
+                                <select class="debit-tax" name="debit_tax_category_id[]">
+                                    <option value="">税区分</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 貸方側 -->
+                    <div class="side-content">
+                        <!-- 貸方勘定科目・タグ -->
+                        <div class="column-content">
+                            <div class="field-group">
+                                <select class="credit-account" name="credit_account_item_id[]" required>
+                                    <option value="">勘定科目</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <select class="form-control credit-tag" name="credit_tags[]" multiple placeholder="タグ">
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <input type="text" class="form-control credit-memo" name="credit_memo[]" placeholder="備考">
+                            </div>
+                        </div>
+                        
+                        <!-- 貸方金額・税区分 -->
+                        <div class="column-content">
+                            <div class="field-group">
+                                <input type="number" class="credit-amount" name="credit_amount[]" 
+                                       min="0" step="1" placeholder="0" required>
+                            </div>
+                            <div class="field-group">
+                                <select class="credit-tax" name="credit_tax_category_id[]">
+                                    <option value="">税区分</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 行追加ボタン -->
+            <button type="button" class="add-row-btn" onclick="addRow()">
+                <span>+</span> 行を追加
+            </button>
+        </div>
+        
+        <!-- 合計 -->
+        <div class="totals-section">
+            <div class="total-side">
+                <div class="total-label">借方合計</div>
+                <div class="total-amounts">
+                    <div class="total-row">
+                        <span class="total-row-label">金額</span>
+                        <span class="total-amount" id="debitTotal">0 円</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-row-label">税額</span>
+                        <span class="total-amount" id="debitTaxTotal">0 円</span>
+                    </div>
+                </div>
+            </div>
+            <div class="total-side">
+                <div class="total-label">貸方合計</div>
+                <div class="total-amounts">
+                    <div class="total-row">
+                        <span class="total-row-label">金額</span>
+                        <span class="total-amount" id="creditTotal">0 円</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-row-label">税額</span>
+                        <span class="total-amount" id="creditTaxTotal">0 円</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ボタン -->
+        <div class="button-group">
+            <button type="submit" class="btn btn-primary">
+                {% if entry %}更新{% else %}登録{% endif %}
+            </button>
+            <a href="{{ url_for('journal_entries.journal_entries_list') }}" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+</div>
+
+<script>
+let accountItemsData = [];
+let taxCategoriesData = [];
+let allTagsData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // データを取得
+    Promise.all([
+        fetch('/api/account-items/all').then(r => r.json()),
+        fetch('/api/tax-categories/all').then(r => r.json()),
+        fetch('/api/counterparties/all').then(r => r.json()),
+        fetch('/api/departments/all').then(r => r.json()),
+        fetch('/api/items/all').then(r => r.json()),
+        fetch('/api/project-tags/all').then(r => r.json()),
+        fetch('/api/memo-tags/all').then(r => r.json())
+    ]).then(([accountItemsResponse, taxCategoriesResponse, counterpartiesResponse, departmentsResponse, itemsResponse, projectTagsResponse, memoTagsResponse]) => {
+        if (accountItemsResponse.success) {
+            accountItemsData = accountItemsResponse.account_items.map(item => ({
+                id: item.id,
+                account_name: item.account_name,
+                display_name: `${item.account_name} (${item.major_category})`,
+                major_category: item.major_category
+            }));
+        }
+        if (taxCategoriesResponse.success) {
+            taxCategoriesData = taxCategoriesResponse.tax_categories;
+        }
+        
+        // タグデータを統合
+        allTagsData = [];
+        if (counterpartiesResponse.success) {
+            counterpartiesResponse.counterparties.forEach(item => {
+                allTagsData.push({ name: item.name, type: '取引先' });
+            });
+        }
+        if (departmentsResponse.success) {
+            departmentsResponse.departments.forEach(item => {
+                allTagsData.push({ name: item.name, type: '部門' });
+            });
+        }
+        if (itemsResponse.success) {
+            itemsResponse.items.forEach(item => {
+                allTagsData.push({ name: item.name, type: '品目' });
+            });
+        }
+        if (projectTagsResponse.success) {
+            projectTagsResponse.project_tags.forEach(item => {
+                allTagsData.push({ name: item.name, type: '案件' });
+            });
+        }
+        if (memoTagsResponse.success) {
+            memoTagsResponse.memo_tags.forEach(item => {
+                allTagsData.push({ name: item.name, type: 'メモ' });
+            });
+        }
+        
+        // datalistを作成
+        createTagDatalist();
+        
+        // 初期行のセレクトボックスを初期化
+        initializeRow(document.querySelector('.journal-row'));
+        
+        // 金額変更時の合計計算
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('debit-amount') || e.target.classList.contains('credit-amount')) {
+                calculateTotals();
+            }
+        });
+        
+        // 初期合計を計算
+        calculateTotals();
+    });
+});
+
+function initializeRow(row) {
+    // 勘定科目のセレクトボックスを初期化
+    const debitAccountSelect = row.querySelector('.debit-account');
+    const creditAccountSelect = row.querySelector('.credit-account');
+    
+    // 既存のオプションをクリア（初期オプションを除く）
+    while (debitAccountSelect.options.length > 1) {
+        debitAccountSelect.remove(1);
+    }
+    while (creditAccountSelect.options.length > 1) {
+        creditAccountSelect.remove(1);
+    }
+    
+    accountItemsData.forEach(item => {
+        debitAccountSelect.add(new Option(item.display_name, item.id));
+        creditAccountSelect.add(new Option(item.display_name, item.id));
+    });
+    
+    // 税区分のセレクトボックスを初期化
+    const debitTaxSelect = row.querySelector('.debit-tax');
+    const creditTaxSelect = row.querySelector('.credit-tax');
+    
+    while (debitTaxSelect.options.length > 1) {
+        debitTaxSelect.remove(1);
+    }
+    while (creditTaxSelect.options.length > 1) {
+        creditTaxSelect.remove(1);
+    }
+    
+    taxCategoriesData.forEach(tax => {
+        debitTaxSelect.add(new Option(tax.name, tax.id));
+        creditTaxSelect.add(new Option(tax.name, tax.id));
+    });
+    
+    // タグのセレクトボックスを初期化
+    const debitTagSelect = row.querySelector('.debit-tag');
+    const creditTagSelect = row.querySelector('.credit-tag');
+    
+    // タグのオプションを追加（種類情報付き）
+    allTagsData.forEach(tag => {
+        const displayText = `${tag.name} (${tag.type})`;
+        debitTagSelect.add(new Option(displayText, tag.name));
+        creditTagSelect.add(new Option(displayText, tag.name));
+    });
+    
+    // Tom Selectを適用
+    if (!debitAccountSelect.tomselect) {
+        new TomSelect(debitAccountSelect, {
+            maxOptions: null,
+            sortField: { field: "text", direction: "asc" }
+        });
+    }
+    if (!creditAccountSelect.tomselect) {
+        new TomSelect(creditAccountSelect, {
+            maxOptions: null,
+            sortField: { field: "text", direction: "asc" }
+        });
+    }
+    if (!debitTaxSelect.tomselect) {
+        new TomSelect(debitTaxSelect);
+    }
+    if (!creditTaxSelect.tomselect) {
+        new TomSelect(creditTaxSelect);
+    }
+    
+    // タグフィールドにTom Selectを適用（各種類1つずつのみ選択可能）
+    if (!debitTagSelect.tomselect) {
+        const debitTagTomSelect = new TomSelect(debitTagSelect, {
+            plugins: ['remove_button'],
+            create: true,
+            maxOptions: null,
+            placeholder: 'タグ',
+            sortField: { field: "text", direction: "asc" },
+            onItemAdd: function(value, item) {
+                // 追加されたタグの種類を取得
+                const addedTag = allTagsData.find(tag => tag.name === value);
+                if (addedTag) {
+                    const addedType = addedTag.type;
+                    // 同じ種類のタグが既に選択されているか確認
+                    const currentItems = this.items;
+                    for (let i = 0; i < currentItems.length; i++) {
+                        const itemValue = currentItems[i];
+                        if (itemValue !== value) {
+                            const existingTag = allTagsData.find(tag => tag.name === itemValue);
+                            if (existingTag && existingTag.type === addedType) {
+                                // 同じ種類のタグを削除
+                                this.removeItem(itemValue);
+                            }
+                        }
+                    }
+                    // 同じ種類の他の選択肢を非表示
+                    allTagsData.forEach(tag => {
+                        if (tag.type === addedType && tag.name !== value) {
+                            this.removeOption(tag.name);
+                        }
+                    });
+                }
+            },
+            onItemRemove: function(value) {
+                // 削除されたタグの種類を取得
+                const removedTag = allTagsData.find(tag => tag.name === value);
+                if (removedTag) {
+                    const removedType = removedTag.type;
+                    // 同じ種類の他の選択肢を再表示
+                    allTagsData.forEach(tag => {
+                        if (tag.type === removedType && tag.name !== value) {
+                            const displayText = `${tag.name} (${tag.type})`;
+                            this.addOption({value: tag.name, text: displayText});
+                        }
+                    });
+                    this.refreshOptions(false);
+                }
+            }
+        });
+    }
+    if (!creditTagSelect.tomselect) {
+        const creditTagTomSelect = new TomSelect(creditTagSelect, {
+            plugins: ['remove_button'],
+            create: true,
+            maxOptions: null,
+            placeholder: 'タグ',
+            sortField: { field: "text", direction: "asc" },
+            onItemAdd: function(value, item) {
+                // 追加されたタグの種類を取得
+                const addedTag = allTagsData.find(tag => tag.name === value);
+                if (addedTag) {
+                    const addedType = addedTag.type;
+                    // 同じ種類のタグが既に選択されているか確認
+                    const currentItems = this.items;
+                    for (let i = 0; i < currentItems.length; i++) {
+                        const itemValue = currentItems[i];
+                        if (itemValue !== value) {
+                            const existingTag = allTagsData.find(tag => tag.name === itemValue);
+                            if (existingTag && existingTag.type === addedType) {
+                                // 同じ種類のタグを削除
+                                this.removeItem(itemValue);
+                            }
+                        }
+                    }
+                    // 同じ種類の他の選択肢を非表示
+                    allTagsData.forEach(tag => {
+                        if (tag.type === addedType && tag.name !== value) {
+                            this.removeOption(tag.name);
+                        }
+                    });
+                }
+            },
+            onItemRemove: function(value) {
+                // 削除されたタグの種類を取得
+                const removedTag = allTagsData.find(tag => tag.name === value);
+                if (removedTag) {
+                    const removedType = removedTag.type;
+                    // 同じ種類の他の選択肢を再表示
+                    allTagsData.forEach(tag => {
+                        if (tag.type === removedType && tag.name !== value) {
+                            const displayText = `${tag.name} (${tag.type})`;
+                            this.addOption({value: tag.name, text: displayText});
+                        }
+                    });
+                    this.refreshOptions(false);
+                }
+            }
+        });
+    }
+}
+
+function addRow() {
+    const container = document.getElementById('journalRows');
+    
+    // テンプレートから新しい行を生成（コピーではなく新規作成）
+    const newRow = document.createElement('div');
+    newRow.className = 'journal-row';
+    newRow.innerHTML = `
+        <button type="button" class="delete-row-btn" onclick="deleteRow(this)">削除</button>
+        
+        <!-- 借方側 -->
+        <div class="side-content">
+            <!-- 借方勘定科目・タグ -->
+            <div class="column-content">
+                <div class="field-group">
+                    <select class="debit-account" name="debit_account_item_id[]" required>
+                        <option value="">勘定科目</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <select class="form-control debit-tag" name="debit_tags[]" multiple placeholder="タグ">
+                    </select>
+                </div>
+                <div class="field-group">
+                    <input type="text" class="form-control debit-memo" name="debit_memo[]" placeholder="備考">
+                </div>
+            </div>
+            
+            <!-- 借方金額・税区分 -->
+            <div class="column-content">
+                <div class="field-group">
+                    <input type="number" class="debit-amount" name="debit_amount[]" 
+                           min="0" step="1" placeholder="0" required>
+                </div>
+                <div class="field-group">
+                    <select class="debit-tax" name="debit_tax_category_id[]">
+                        <option value="">税区分</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 貸方側 -->
+        <div class="side-content">
+            <!-- 貸方勘定科目・タグ -->
+            <div class="column-content">
+                <div class="field-group">
+                    <select class="credit-account" name="credit_account_item_id[]" required>
+                        <option value="">勘定科目</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <select class="form-control credit-tag" name="credit_tags[]" multiple placeholder="タグ">
+                    </select>
+                </div>
+                <div class="field-group">
+                    <input type="text" class="form-control credit-memo" name="credit_memo[]" placeholder="備考">
+                </div>
+            </div>
+            
+            <!-- 貸方金額・税区分 -->
+            <div class="column-content">
+                <div class="field-group">
+                    <input type="number" class="credit-amount" name="credit_amount[]" 
+                           min="0" step="1" placeholder="0" required>
+                </div>
+                <div class="field-group">
+                    <select class="credit-tax" name="credit_tax_category_id[]">
+                        <option value="">税区分</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(newRow);
+    initializeRow(newRow);
+    calculateTotals();
+}
+
+function deleteRow(btn) {
+    const container = document.getElementById('journalRows');
+    if (container.querySelectorAll('.journal-row').length > 1) {
+        btn.closest('.journal-row').remove();
+        calculateTotals();
+    } else {
+        alert('最低1行は必要です');
+    }
+}
+
+function createTagDatalist() {
+    // 既存のdatalistを削除
+    const existingDatalist = document.getElementById('tag-suggestions');
+    if (existingDatalist) {
+        existingDatalist.remove();
+    }
+    
+    // 新しいdatalistを作成
+    const datalist = document.createElement('datalist');
+    datalist.id = 'tag-suggestions';
+    
+    allTagsData.forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag.name;
+        option.textContent = `${tag.name} (${tag.type})`;
+        datalist.appendChild(option);
+    });
+    
+    document.body.appendChild(datalist);
+}
+
+function calculateTotals() {
+    let debitTotal = 0;
+    let creditTotal = 0;
+    
+    document.querySelectorAll('.debit-amount').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        debitTotal += value;
+    });
+    
+    document.querySelectorAll('.credit-amount').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        creditTotal += value;
+    });
+    
+    document.getElementById('debitTotal').textContent = debitTotal.toLocaleString() + ' 円';
+    document.getElementById('creditTotal').textContent = creditTotal.toLocaleString() + ' 円';
+    document.getElementById('debitTaxTotal').textContent = '0 円';
+    document.getElementById('creditTaxTotal').textContent = '0 円';
+    
+    // 借方と貸方が一致しない場合は警告表示
+    if (debitTotal !== creditTotal && debitTotal > 0 && creditTotal > 0) {
+        document.getElementById('debitTotal').style.color = '#e74c3c';
+        document.getElementById('creditTotal').style.color = '#e74c3c';
+    } else {
+        document.getElementById('debitTotal').style.color = '#2c3e50';
+        document.getElementById('creditTotal').style.color = '#2c3e50';
+    }
+}
+
+// フォーム送信時のバリデーション
+document.getElementById('journalForm').addEventListener('submit', function(e) {
+    const debitTotal = Array.from(document.querySelectorAll('.debit-amount'))
+        .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+    const creditTotal = Array.from(document.querySelectorAll('.credit-amount'))
+        .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+    
+    if (debitTotal !== creditTotal) {
+        e.preventDefault();
+        alert('借方合計と貸方合計が一致していません。\n借方: ' + debitTotal + '円\n貸方: ' + creditTotal + '円');
+        return false;
+    }
+});
+</script>
+{% endblock %}

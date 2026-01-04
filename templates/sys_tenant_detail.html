@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}テナント詳細{% endblock %}
+{% block content %}
+<h1>テナント詳細</h1>
+
+<div class="card">
+  <h2>{{ tenant['名称'] }}</h2>
+  
+  <div style="margin-top:20px">
+    <table class="table">
+      <tbody>
+        <tr>
+          <th style="width:200px">テナントID</th>
+          <td>{{ tenant.id }}</td>
+        </tr>
+        <tr>
+          <th>名称</th>
+          <td>{{ tenant['名称'] }}</td>
+        </tr>
+        <tr>
+          <th>Slug</th>
+          <td>{{ tenant.slug }}</td>
+        </tr>
+        <tr>
+          <th>有効</th>
+          <td>{% if tenant['有効'] %}✓ 有効{% else %}✗ 無効{% endif %}</td>
+        </tr>
+        <tr>
+          <th>作成日時</th>
+          <td>{{ tenant.created_at }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:30px">
+    <h3>管理機能</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">
+      <a class="card" href="{{ url_for('system_admin.tenant_admins', tid=tenant.id) }}" style="text-decoration:none">
+        <h4>テナント管理者管理</h4>
+        <p class="small" style="color:#666">テナント管理者の作成・編集・削除（{{ admin_count }}人）</p>
+      </a>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <a class="btn" href="{{ url_for('system_admin.tenant_edit', tid=tenant.id) }}">編集</a>
+    <a class="btn sub" href="{{ url_for('system_admin.tenants') }}">戻る</a>
+  </div>
+</div>
+{% endblock %}

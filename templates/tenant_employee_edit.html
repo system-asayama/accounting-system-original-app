@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}従業員編集{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 if store else '店舗名' }}</div>
+  <h1 style="margin-top:12px">従業員編集</h1>
+</div>
+<form method="post">
+  <div class="card" style="max-width:500px">
+    <div class="row">
+      <label for="login_id">ログインID</label>
+      <input id="login_id" name="login_id" type="text" value="{{ employee.login_id }}" readonly style="background-color:#f5f5f5">
+    </div>
+    
+    <div class="row">
+      <label for="name">氏名</label>
+      <input id="name" name="name" type="text" value="{{ employee.name }}" required>
+    </div>
+    
+    <div class="row">
+      <label for="email">メールアドレス</label>
+      <input id="email" name="email" type="email" value="{{ employee.email }}" required>
+    </div>
+    
+    <div class="row">
+      <label for="role">役割</label>
+      <select id="role" name="role" required>
+        <option value="employee" {% if employee.role == 'employee' %}selected{% endif %}>従業員</option>
+        <option value="admin" {% if employee.role == 'admin' %}selected{% endif %}>店舗管理者</option>
+        <option value="tenant_admin" {% if employee.role == 'tenant_admin' %}selected{% endif %}>テナント管理者</option>
+      </select>
+      <small style="color:#666;margin-top:4px;display:block">役割を変更すると、アクセス権限が変わります。</small>
+    </div>
+    
+    <div class="row">
+      <label for="password">パスワード（変更する場合のみ入力）</label>
+      <input id="password" name="password" type="password" placeholder="変更しない場合は空欄">
+    </div>
+    
+    <div class="row">
+      <label for="password_confirm">パスワード（確認）</label>
+      <input id="password_confirm" name="password_confirm" type="password" placeholder="もう一度入力">
+    </div>
+    
+    <div class="row" style="padding:16px;background:#f9f9f9;border-radius:8px">
+      <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+        <input name="active" type="checkbox" value="1" 
+               {% if employee.active == 1 %}checked{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">有効</span>
+      </label>
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        チェックを外すとこの従業員は無効化されます。
+      </div>
+    </div>
+    
+    <div class="row">
+      <label style="font-weight:bold">勤務する店舗（複数選択可）</label>
+      {% if stores %}
+        <table style="border-collapse:collapse;width:100%">
+          {% for store in stores %}
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px;text-align:center;width:40px">
+              <input type="checkbox" name="store_ids" value="{{ store.id }}" 
+                     {% if store.id in employee_store_ids %}checked{% endif %}>
+            </td>
+            <td style="border:1px solid #ccc;padding:8px">{{ store.名称 }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p style="color:#999">店舗が登録されていません。</p>
+      {% endif %}
+    </div>
+    
+    <div class="actions" style="margin-top:20px; display:flex; gap:10px">
+      <button class="btn" type="submit">更新</button>
+      <a class="btn sub" href="{{ url_for('tenant_admin.employees') }}">キャンセル</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}従業員ダッシュボード{% endblock %}
+{% block content %}
+<h1>従業員ダッシュボード</h1>
+
+<div class="card">
+  <h2>ようこそ、{{ session.user_name }}さん</h2>
+  <p>従業員としてログインしています。</p>
+  
+  <div style="margin-top:20px">
+    <h3>ロール情報</h3>
+    <ul>
+      <li><strong>ユーザーID:</strong> {{ session.user_id }}</li>
+      <li><strong>氏名:</strong> {{ session.user_name }}</li>
+      <li><strong>ロール:</strong> {{ session.role }}</li>
+      <li><strong>テナントID:</strong> {{ session.tenant_id }}</li>
+    </ul>
+  </div>
+
+  <div style="margin-top:30px">
+    <h3>利用可能な機能</h3>
+    <p>このページは基本的な認証システムのデモです。</p>
+    <ul>
+      <li>勤怠管理</li>
+      <li>シフト確認</li>
+      <li>個人情報の変更</li>
+    </ul>
+  </div>
+
+  <div style="margin-top:30px">
+    <a class="btn sub" href="{{ mypage_url }}">マイページ</a>
+    <a class="btn" href="{{ url_for('auth.logout') }}">ログアウト</a>
+  </div>
+</div>
+
+{% if get_flashed_messages() %}
+<div style="margin-top:20px">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>ログイン選択</h2>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+  <a class="card" href="{{ url_for('auth.system_admin_login') }}" style="text-decoration:none">
+    <h3>システム管理者</h3>
+    <p class="small" style="color:#666">全テナント横断の最高権限</p>
+  </a>
+  <a class="card" href="{{ url_for('auth.tenant_admin_login') }}" style="text-decoration:none">
+    <h3>テナント管理者</h3>
+    <p class="small" style="color:#666">テナント単位の管理者</p>
+  </a>
+  <a class="card" href="{{ url_for('auth.admin_login') }}" style="text-decoration:none">
+    <h3>管理者</h3>
+    <p class="small" style="color:#666">店舗/拠点などの管理者</p>
+  </a>
+  <a class="card" href="{{ url_for('auth.employee_login') }}" style="text-decoration:none">
+    <h3>従業員</h3>
+    <p class="small" style="color:#666">一般従業員</p>
+  </a>
+</div>
+{% endblock %}

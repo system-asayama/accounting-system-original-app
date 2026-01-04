@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}店舗管理者編集{% endblock %}
+{% block content %}
+<h1>店舗管理者編集</h1>
+
+<div class="card" style="max-width:600px">
+  <form method="post">
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">ログインID <span style="color:red">*</span></label>
+      <input type="text" name="login_id" value="{{ admin.login_id }}" required autofocus style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">氏名 <span style="color:red">*</span></label>
+      <input type="text" name="name" value="{{ admin.name }}" required style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">メールアドレス</label>
+      <input type="email" name="email" value="{{ admin.email or '' }}" placeholder="例）admin@example.com" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">パスワード</label>
+      <input type="password" name="password" minlength="8" placeholder="変更する場合のみ入力（8文字以上）" style="width:100%;padding:8px">
+      <small style="color:#666">※ 空欄の場合はパスワードを変更しません</small>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">パスワード（確認）</label>
+      <input type="password" name="password_confirm" minlength="8" placeholder="もう一度入力" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:8px">管理する店舗 <span style="color:red">*</span></label>
+      {% if stores %}
+        <table style="border-collapse:collapse;width:100%">
+          {% for store in stores %}
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px;text-align:center;width:40px">
+              <input type="checkbox" name="store_ids" value="{{ store.id }}" {% if store.id in admin_store_ids %}checked{% endif %}>
+            </td>
+            <td style="border:1px solid #ccc;padding:8px">
+              {{ store['名称'] }}
+              {% if store.is_owner %}
+                <span style="color:#ff9800;font-weight:bold;margin-left:8px">★ オーナー</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p style="color:#999;margin:0">店舗が登録されていません。</p>
+      {% endif %}
+      <small style="color:#666">少なくとも1つの店舗を選択してください。</small>
+    </div>
+
+    <div style="margin-bottom:16px;padding:16px;background:#f9f9f9;border-radius:8px">
+      {% if admin.is_owner == 1 %}
+      <label style="display:flex;align-items:center;cursor:not-allowed;margin:0;opacity:0.6">
+        <input name="active" type="checkbox" value="1" checked disabled style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">有効</span>
+      </label>
+      <input type="hidden" name="active" value="1">
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        ※ オーナーは常に有効です
+      </div>
+      {% else %}
+      <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+        <input name="active" type="checkbox" value="1" 
+               {% if admin.active == 1 %}checked{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">有効</span>
+      </label>
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        チェックを外すとこの店舗管理者は無効化されます。
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom:16px;padding:16px;background:#f9f9f9;border-radius:8px">
+      {% if admin.is_owner == 1 %}
+      <label style="display:flex;align-items:center;cursor:not-allowed;margin:0;opacity:0.6">
+        <input name="can_manage_admins" type="checkbox" value="1" checked disabled style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">管理者管理権限</span>
+      </label>
+      <input type="hidden" name="can_manage_admins" value="1">
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        ※ オーナーは常に管理者管理権限を持ちます
+      </div>
+      {% else %}
+      <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+        <input name="can_manage_admins" type="checkbox" value="1"
+               {% if can_manage_admins %}checked{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">管理者管理権限</span>
+      </label>
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        チェックを入れるとこの店舗管理者は他の店舗管理者を管理できるようになります。
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn" type="submit">更新</button>
+      <a class="btn sub" href="{{ back_url }}">キャンセル</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

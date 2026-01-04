@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}{% if item %}勘定科目編集{% else %}勘定科目新規追加{% endif %} - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    input[type="text"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    
+    input[type="text"]:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+    
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    input[type="checkbox"] {
+        width: 1.2rem;
+        height: 1.2rem;
+        cursor: pointer;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        margin: 0;
+        font-weight: normal;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .form-row.full {
+        grid-template-columns: 1fr;
+    }
+    
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .button-group .btn {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #0c5460;
+    }
+    
+    .field-hint {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 分類階層データ
+const categoriesData = {{ categories | tojson | safe }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const majorSelect = document.getElementById('major_category');
+    const midSelect = document.getElementById('mid_category');
+    const subSelect = document.getElementById('sub_category');
+    
+    // 大分類が変更されたとき
+    majorSelect.addEventListener('change', function() {
+        const major = this.value;
+        
+        // 中分類をリセット
+        midSelect.innerHTML = '<option value="">-- 選択してください --</option>';
+        subSelect.innerHTML = '<option value="">-- 選択してください --</option>';
+        
+        if (major && categoriesData[major]) {
+            const midCategories = Object.keys(categoriesData[major]);
+            midCategories.forEach(mid => {
+                const option = document.createElement('option');
+                option.value = mid;
+                option.textContent = mid;
+                midSelect.appendChild(option);
+            });
+        }
+    });
+    
+    // 中分類が変更されたとき
+    midSelect.addEventListener('change', function() {
+        const major = majorSelect.value;
+        const mid = this.value;
+        
+        // 小分類をリセット
+        subSelect.innerHTML = '<option value="">-- 選択してください --</option>';
+        
+        if (major && mid && categoriesData[major] && categoriesData[major][mid]) {
+            const subCategories = categoriesData[major][mid];
+            subCategories.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                subSelect.appendChild(option);
+            });
+        }
+    });
+    
+    // 編集モードの場合、既存の値に基づいて中分類・小分類を設定
+    {% if item %}
+    const initialMajor = '{{ item.major_category if item.major_category else "" }}';
+    const initialMid = '{{ item.mid_category if item.mid_category else "" }}';
+    const initialSub = '{{ item.sub_category if item.sub_category else "" }}';
+    
+    if (initialMajor) {
+        majorSelect.value = initialMajor;
+        majorSelect.dispatchEvent(new Event('change'));
+        
+        setTimeout(() => {
+            if (initialMid) {
+                midSelect.value = initialMid;
+                midSelect.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    if (initialSub) {
+                        subSelect.value = initialSub;
+                    }
+                }, 50);
+            }
+        }, 50);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<h2>{% if item %}勘定科目編集{% else %}勘定科目新規追加{% endif %}</h2>
+
+<div class="form-container">
+    {% if item %}
+        <div class="info-box">
+            <strong>勘定科目ID:</strong> {{ item.id }}
+        </div>
+    {% endif %}
+    
+    <form method="POST" action="{% if item %}{{ url_for('account_items.account_item_edit', item_id=item.id) }}{% else %}{{ url_for('account_items.account_item_create') }}{% endif %}">
+        
+        <!-- 勘定科目名 -->
+        <div class="form-group form-row full">
+            <div>
+                <label for="account_name" class="required">勘定科目名</label>
+                <input type="text" id="account_name" name="account_name" required placeholder="例: 現金" value="{{ item.account_name if item else '' }}">
+                <div class="field-hint">勘定科目の正式名称を入力してください。</div>
+            </div>
+        </div>
+        
+        <!-- 表示名 -->
+        <div class="form-group form-row full">
+            <div>
+                <label for="display_name" class="required">表示名（決算書）</label>
+                <input type="text" id="display_name" name="display_name" required placeholder="例: 現金及び預金" value="{{ item.display_name if item else '' }}">
+                <div class="field-hint">決算書に表示する名称を入力してください。</div>
+            </div>
+        </div>
+        
+        <!-- 分類情報 -->
+        <div class="form-group">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">分類情報</h3>
+            
+            <div class="form-row">
+                <div>
+                    <label for="major_category" class="required">大分類</label>
+                    <select id="major_category" name="major_category" required>
+                        <option value="">-- 選択してください --</option>
+                        {% for major in categories.keys() %}
+                        <option value="{{ major }}">{{ major }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="mid_category" class="required">中分類</label>
+                    <select id="mid_category" name="mid_category" required>
+                        <option value="">-- 選択してください --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="sub_category" class="required">小分類</label>
+                <select id="sub_category" name="sub_category" required>
+                    <option value="">-- 選択してください --</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 取引相手方勘定科目 -->
+        <div class="form-group">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">取引相手方勘定科目</h3>
+            
+            <div class="form-row">
+                <div>
+                    <label for="income_counterpart" class="required">収入取引相手方</label>
+                    <select id="income_counterpart" name="income_counterpart" required>
+                        <option value="">-- 選択してください --</option>
+                        {% for option in options.income_counterparts %}
+                        <option value="{{ option }}" {% if item and item.income_counterpart == option %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="expense_counterpart" class="required">支出取引相手方</label>
+                    <select id="expense_counterpart" name="expense_counterpart" required>
+                        <option value="">-- 選択してください --</option>
+                        {% for option in options.expense_counterparts %}
+                        <option value="{{ option }}" {% if item and item.expense_counterpart == option %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 税区分 -->
+        <div class="form-group form-row full">
+            <div>
+                <label for="tax_category" class="required">税区分</label>
+                <select id="tax_category" name="tax_category" required>
+                    <option value="">-- 選択してください --</option>
+                    {% for option in options.tax_categories %}
+                    <option value="{{ option }}" {% if item and item.tax_category == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+                <div class="field-hint">消費税の区分を入力してください。</div>
+            </div>
+        </div>
+        
+        <!-- ショートカット -->
+        <div class="form-group">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">ショートカット</h3>
+            
+            <div class="form-row">
+                <div>
+                    <label for="shortcut1">ショートカット1</label>
+                    <input type="text" id="shortcut1" name="shortcut1" placeholder="例: GENKIN" value="{{ item.shortcut1 if item else '' }}">
+                </div>
+                <div>
+                    <label for="shortcut2">ショートカット2</label>
+                    <input type="text" id="shortcut2" name="shortcut2" placeholder="例: 100" value="{{ item.shortcut2 if item else '' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 表示順序 -->
+        <div class="form-group form-row">
+            <div>
+                <label for="bs_rank">小分類内での表示順</label>
+                <input type="number" id="bs_rank" name="bs_rank" placeholder="例: 1" value="{{ item.bs_rank if item and item.bs_rank else '' }}" min="1" step="1">
+                <div class="field-hint">小分類内での表示順序を数値で指定します（小さい数字ほど上に表示）。</div>
+            </div>
+            <div>
+                <label for="liquidity_rank">流動性ランク</label>
+                <input type="number" id="liquidity_rank" name="liquidity_rank" placeholder="例: 10" value="{{ item.liquidity_rank if item and item.liquidity_rank else '' }}" min="1" step="1">
+                <div class="field-hint">流動性配列法での順序を数値で指定します。</div>
+            </div>
+        </div>
+        
+        <!-- チェックボックス -->
+        <div class="form-group">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">設定</h3>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="input_candidate" name="input_candidate" {% if item and item.input_candidate %}checked{% elif not item %}checked{% endif %}>
+                <label for="input_candidate" class="checkbox-label">入力候補に含める</label>
+            </div>
+            
+            <div class="checkbox-group" style="margin-top: 0.75rem;">
+                <input type="checkbox" id="sub_account_priority_tag" name="sub_account_priority_tag" {% if item and item.sub_account_priority_tag %}checked{% endif %}>
+                <label for="sub_account_priority_tag" class="checkbox-label">補助科目優先タグ</label>
+            </div>
+        </div>
+        
+        <!-- ボタン -->
+        <div class="button-group">
+            <button type="submit" class="btn btn-success">
+                {% if item %}更新{% else %}追加{% endif %}
+            </button>
+            <a href="{{ url_for('account_items.account_items_list') }}" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

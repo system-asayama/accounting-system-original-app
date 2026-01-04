@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}店舗情報{% endblock %}
+{% block content %}
+{% if tenant %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 }}</div>
+  {% if store_obj %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store_obj.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">店舗情報</h1>
+</div>
+{% else %}
+<h1>店舗情報</h1>
+{% endif %}
+<style>
+  .store-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .store-info-row {
+    display: block;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .store-info-row:last-of-type {
+    border-bottom: none;
+  }
+  
+  .store-info-label {
+    font-weight: 600;
+    display: inline-block;
+    width: 120px;
+    color: #374151;
+  }
+  
+  .store-info-value {
+    display: inline;
+  }
+  
+  .store-name {
+    font-weight: bold;
+  }
+  
+  .store-slug code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  
+  .store-date {
+    color: #666;
+  }
+  
+  .store-actions {
+    padding-top: 12px;
+    margin-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  
+  .btn.small {
+    display: inline-block;
+    margin: 4px 4px 4px 0;
+    font-size: 0.9em;
+    padding: 8px 12px;
+  }
+  
+  .btn.delete {
+    background: #d32f2f;
+  }
+  
+  .store-actions form {
+    display: inline-block;
+  }
+</style>
+
+<div class="store-card">
+  <div class="store-info-row">
+    <span class="store-info-label">店舗ID:</span>
+    <span class="store-info-value">{{ store.id }}</span>
+  </div>
+  
+  <div class="store-info-row">
+    <span class="store-info-label">名称:</span>
+    <span class="store-info-value store-name">
+      <a href="{{ url_for('admin.store_detail', store_id=store.id) }}">{{ store['名称'] }}</a>
+    </span>
+  </div>
+  
+  <div class="store-info-row">
+    <span class="store-info-label">Slug:</span>
+    <span class="store-info-value store-slug"><code>{{ store.slug }}</code></span>
+  </div>
+  
+  <div class="store-info-row">
+    <span class="store-info-label">有効:</span>
+    <span class="store-info-value">
+      {% if store['有効'] == 1 %}
+        <span style="color:green">✓ 有効</span>
+      {% else %}
+        <span style="color:red">× 無効</span>
+      {% endif %}
+    </span>
+  </div>
+  
+  {% if store['郵便番号'] %}
+  <div class="store-info-row">
+    <span class="store-info-label">郵便番号:</span>
+    <span class="store-info-value">{{ store['郵便番号'] }}</span>
+  </div>
+  {% endif %}
+  
+  {% if store['住所'] %}
+  <div class="store-info-row">
+    <span class="store-info-label">住所:</span>
+    <span class="store-info-value">{{ store['住所'] }}</span>
+  </div>
+  {% endif %}
+  
+  {% if store['電話番号'] %}
+  <div class="store-info-row">
+    <span class="store-info-label">電話番号:</span>
+    <span class="store-info-value">{{ store['電話番号'] }}</span>
+  </div>
+  {% endif %}
+  
+  {% if store.email %}
+  <div class="store-info-row">
+    <span class="store-info-label">e-mailアドレス:</span>
+    <span class="store-info-value">{{ store.email }}</span>
+  </div>
+  {% endif %}
+  
+  {% if store.openai_api_key %}
+  <div class="store-info-row">
+    <span class="store-info-label">OpenAI APIキー:</span>
+    <span class="store-info-value">設定済み</span>
+  </div>
+  {% endif %}
+  
+  <div class="store-info-row">
+    <span class="store-info-label">作成日時:</span>
+    <span class="store-info-value store-date">{{ store.created_at }}</span>
+  </div>
+  
+  <div class="store-info-row">
+    <span class="store-info-label">更新日時:</span>
+    <span class="store-info-value store-date">{{ store.updated_at if store.updated_at else store.created_at }}</span>
+  </div>
+  
+  <div class="store-actions">
+    <a class="btn small" href="{{ url_for('admin.store_detail', store_id=store.id) }}">詳細</a>
+    <a class="btn small" href="{{ url_for('admin.store_edit', store_id=store.id) }}">編集</a>
+    <button class="btn small delete" type="button" onclick="showDeleteModal()">削除</button>
+  </div>
+  
+  <div class="store-actions" style="border-top:none; padding-top:8px">
+    <a class="btn small" href="{{ url_for('admin.admins') }}">店舗管理者管理</a>
+    <a class="btn small" href="{{ url_for('admin.employees') }}">従業員管理</a>
+  </div>
+  
+  <div class="store-actions" style="border-top:none; padding-top:8px">
+    <a class="btn small" href="{{ url_for('admin.available_apps') }}">利用可能アプリ一覧</a>
+    <a class="btn small sub" href="{{ url_for('admin.dashboard') }}">戻る</a>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div id="deleteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;" onclick="if(event.target===this) hideDeleteModal()">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;max-width:500px;width:90%;">
+    <h2 style="color:#d32f2f;margin-top:0">⚠️ 警告</h2>
+    <p style="margin-bottom:20px;line-height:1.6">
+      <strong>{{ store['名称'] }}</strong> を削除すると、以下の関連データも全て削除されます：
+    </p>
+    <ul style="margin-bottom:20px;line-height:1.8;color:#666">
+      <li>店舗に紐づく全ての管理者の紐付け</li>
+      <li>店舗に紐づく全ての従業員の紐付け</li>
+      <li>店舗に紐づく全てのアプリ設定</li>
+    </ul>
+    <p style="margin-bottom:20px;color:#d32f2f;font-weight:bold">
+      この操作は取り消せません。
+    </p>
+    <p style="margin-bottom:10px">
+      削除を実行するには、ログイン時のパスワードを入力してください：
+    </p>
+    <form id="deleteForm" method="post" action="{{ url_for('admin.store_delete', store_id=store.id) }}">
+      {% if get_csrf %}<input type="hidden" name="csrf_token" value="{{ get_csrf() }}">{% endif %}
+      <input type="password" name="password" placeholder="パスワード" required 
+             style="width:100%;padding:10px;margin-bottom:20px;border:1px solid #ddd;border-radius:4px;font-size:16px">
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn sub" onclick="hideDeleteModal()">キャンセル</button>
+        <button type="submit" class="btn" style="background:#d32f2f">削除する</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'block';
+}
+
+function hideDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+</script>
+
+{% endblock %}

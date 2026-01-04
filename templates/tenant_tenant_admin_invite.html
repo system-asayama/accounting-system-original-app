@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}既存のテナント管理者を招待{% endblock %}
+{% block content %}
+<style>
+  .form-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  .description-box {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .description-box p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.6;
+  }
+  
+  .form-group {
+    margin-bottom: 24px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  .form-group label .required {
+    color: red;
+    margin-left: 4px;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1em;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .help-text {
+    color: #6b7280;
+    font-size: 0.9em;
+    margin-top: 6px;
+  }
+  
+  .warning-box {
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .warning-box p {
+    margin: 0;
+    color: #92400e;
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
+  
+  .warning-box strong {
+    color: #78350f;
+  }
+  
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  
+  .btn.primary {
+    background: #10b981;
+    color: white;
+    padding: 12px 24px;
+  }
+  
+  .btn.primary:hover {
+    background: #059669;
+  }
+</style>
+
+<div class="form-container">
+  <div style="margin-bottom:20px">
+    <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+    <h1 style="margin-top:12px">既存のテナント管理者を招待</h1>
+  </div>
+  
+  <div class="description-box">
+    <p>既存のテナント管理者のログインIDと氏名を入力して、このテナント（{{ tenant_name }}）に招待します。</p>
+  </div>
+  
+  <form method="post">
+    <div class="form-group">
+      <label for="login_id">ログインID<span class="required">*</span></label>
+      <input type="text" id="login_id" name="login_id" placeholder="例: tenant-admin-1" required>
+      <div class="help-text">招待したいテナント管理者のログインIDを入力してください。</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="name">氏名<span class="required">*</span></label>
+      <input type="text" id="name" name="name" placeholder="例: 山田太郎" required>
+      <div class="help-text">招待したいテナント管理者の氏名を入力してください。</div>
+    </div>
+    
+    <div class="warning-box">
+      <p><strong>注意:</strong> ログインIDと氏名が完全に一致するテナント管理者のみ招待できます。</p>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn primary">招待する</button>
+      <a class="btn sub" href="{{ url_for('tenant_admin.tenant_admins') }}">キャンセル</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

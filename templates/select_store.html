@@ -1,0 +1,39 @@
+{% extends "bootstrap.html" %}
+
+{% block title %}店舗選択{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>店舗選択</h4>
+                </div>
+                <div class="card-body">
+                    <p>管理する店舗を選択してください。</p>
+                    
+                    {% if stores %}
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="store_id" class="form-label">店舗</label>
+                            <select class="form-select" id="store_id" name="store_id" required>
+                                <option value="">-- 選択してください --</option>
+                                {% for store in stores %}
+                                <option value="{{ store.id }}">{{ store.名称 }} ({{ store.slug }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">選択</button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        所属している店舗がありません。テナント管理者にお問い合わせください。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

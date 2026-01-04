@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{% if fiscal_period %}会計期間編集{% else %}会計期間作成{% endif %} - 会計システム{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('fiscal_periods.fiscal_periods_list') }}">会計期間</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% if fiscal_period %}編集{% else %}新規作成{% endif %}</li>
+    </ol>
+</nav>
+
+<h2>{% if fiscal_period %}会計期間編集{% else %}会計期間作成{% endif %}</h2>
+
+<form method="POST" action="{% if fiscal_period %}{{ url_for('fiscal_periods.fiscal_period_update', fiscal_period_id=fiscal_period.id) }}{% else %}{{ url_for('fiscal_periods.fiscal_period_create') }}{% endif %}">
+    <div class="mb-3">
+        <label for="name" class="form-label">会計期間名 <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ fiscal_period.name if fiscal_period else '' }}" required placeholder="例: 2024年度、第5期">
+    </div>
+
+    <div class="mb-3">
+        <label for="business_type" class="form-label">事業種別 <span class="text-danger">*</span></label>
+        <select class="form-select" id="business_type" name="business_type" required onchange="updateDateFields()">
+            <option value="corporate" {% if fiscal_period and fiscal_period.business_type == 'corporate' %}selected{% endif %}>法人</option>
+            <option value="individual" {% if fiscal_period and fiscal_period.business_type == 'individual' %}selected{% endif %}>個人</option>
+        </select>
+        <div class="form-text">個人の場合、会計期間は自動的に1月1日～12月31日になります</div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="start_date" class="form-label">開始日 <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ fiscal_period.start_date if fiscal_period else '' }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="end_date" class="form-label">終了日 <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ fiscal_period.end_date if fiscal_period else '' }}" required>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="notes" class="form-label">備考</label>
+        <textarea class="form-control" id="notes" name="notes" rows="3">{{ fiscal_period.notes if fiscal_period else '' }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">{% if fiscal_period %}更新{% else %}作成{% endif %}</button>
+    <a href="{{ url_for('fiscal_periods.fiscal_periods_list') }}" class="btn btn-secondary">キャンセル</a>
+</form>
+
+<script>
+function updateDateFields() {
+    const businessType = document.getElementById('business_type').value;
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (businessType === 'individual') {
+        // 個人の場合、現在の年の1月1日～12月31日を設定
+        const currentYear = new Date().getFullYear();
+        startDateInput.value = currentYear + '-01-01';
+        endDateInput.value = currentYear + '-12-31';
+        startDateInput.readOnly = true;
+        endDateInput.readOnly = true;
+    } else {
+        // 法人の場合、入力可能にする
+        startDateInput.readOnly = false;
+        endDateInput.readOnly = false;
+    }
+}
+
+// ページ読み込み時に実行
+document.addEventListener('DOMContentLoaded', function() {
+    updateDateFields();
+});
+</script>
+{% endblock %}

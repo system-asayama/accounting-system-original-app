@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}取引明細編集{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">ホーム</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('transactions.imported_transactions_list') }}">取引明細一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">編集</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">取引明細編集</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">取引情報</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <th width="30%">取引日:</th>
+                            <td>{{ transaction.transaction_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>口座:</th>
+                            <td>{{ transaction.account_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>摘要:</th>
+                            <td>{{ transaction.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>入金金額:</th>
+                            <td class="text-end">
+                                {% if transaction.income_amount > 0 %}
+                                <span class="text-success fw-bold">{{ '{:,}'.format(transaction.income_amount) }}円</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>出金金額:</th>
+                            <td class="text-end">
+                                {% if transaction.expense_amount > 0 %}
+                                <span class="text-danger fw-bold">{{ '{:,}'.format(transaction.expense_amount) }}円</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">勘定科目登録</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('transactions.imported_transaction_update', id=transaction.id) }}">
+                        <!-- デバッグ情報 -->
+                        <div class="alert alert-warning">
+                            <strong>デバッグ:</strong> transaction.account_item_id = {{ transaction.account_item_id }}, selected_account_item_id = {{ selected_account_item_id }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="account_item_id" class="form-label">勘定科目 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="account_item_id" name="account_item_id" required>
+                                <option value="">-- 勘定科目を選択 --</option>
+                                {% for item in account_items %}
+                                <option value="{{ item.id }}" {% if selected_account_item_id and selected_account_item_id|int == item.id|int %}selected{% endif %}>{{ item.account_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">摘要</label>
+                            <input type="text" class="form-control" id="description" name="description" value="{{ transaction.description }}" placeholder="摘要を入力（任意）">
+                            <div class="form-text">摘要を変更する場合は入力してください</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="counterparty_id" class="form-label">取引先</label>
+                            <select class="form-select" id="counterparty_id" name="counterparty_id">
+                                <option value="">（なし）</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="department_id" class="form-label">部門</label>
+                            <select class="form-select" id="department_id" name="department_id">
+                                <option value="">（なし）</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="item_id" class="form-label">品目</label>
+                            <select class="form-select" id="item_id" name="item_id">
+                                <option value="">（なし）</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="project_tag_id" class="form-label">案件タグ</label>
+                            <select class="form-select" id="project_tag_id" name="project_tag_id">
+                                <option value="">（なし）</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="memo_tag_id" class="form-label">メモタグ</label>
+                            <select class="form-select" id="memo_tag_id" name="memo_tag_id">
+                                <option value="">（なし）</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('transactions.imported_transactions_list') }}" class="btn btn-secondary">キャンセル</a>
+                                <button type="button" class="btn btn-danger" onclick="deleteTransaction()">取引解除</button>
+                            </div>
+                            <button type="submit" class="btn btn-primary">登録</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">仕訳プレビュー</h5>
+        </div>
+        <div class="card-body">
+            <div id="journal-preview" class="alert alert-light">
+                <p class="mb-0">勘定科目を選択すると、仕訳プレビューが表示されます。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('account_item_id').addEventListener('change', function() {
+    const accountItemId = this.value;
+    const accountItemName = this.options[this.selectedIndex].text;
+    const previewDiv = document.getElementById('journal-preview');
+    
+    if (!accountItemId) {
+        previewDiv.innerHTML = '<p class="mb-0">勘定科目を選択すると、仕訳プレビューが表示されます。</p>';
+        return;
+    }
+    
+    const incomeAmount = {{ transaction.income_amount }};
+    const expenseAmount = {{ transaction.expense_amount }};
+    const accountName = '{{ transaction.account_name }}';
+    const date = '{{ transaction.transaction_date }}';
+    const description = document.getElementById('description').value || '{{ transaction.description }}';
+    
+    let html = '<table class="table table-bordered mb-0"><thead><tr><th>日付</th><th>借方科目</th><th>借方金額</th><th>貸方科目</th><th>貸方金額</th><th>摘要</th></tr></thead><tbody>';
+    
+    if (incomeAmount > 0) {
+        // 入金の場合: 借方=口座、貸方=選択された勘定科目
+        html += `<tr>
+            <td>${date}</td>
+            <td>${accountName}</td>
+            <td class="text-end">${incomeAmount.toLocaleString()}円</td>
+            <td>${accountItemName}</td>
+            <td class="text-end">${incomeAmount.toLocaleString()}円</td>
+            <td>${description}</td>
+        </tr>`;
+    } else {
+        // 出金の場合: 借方=選択された勘定科目、貸方=口座
+        html += `<tr>
+            <td>${date}</td>
+            <td>${accountItemName}</td>
+            <td class="text-end">${expenseAmount.toLocaleString()}円</td>
+            <td>${accountName}</td>
+            <td class="text-end">${expenseAmount.toLocaleString()}円</td>
+            <td>${description}</td>
+        </tr>`;
+    }
+    
+    html += '</tbody></table>';
+    previewDiv.innerHTML = html;
+});
+
+// 摘要が変更されたときもプレビューを更新
+document.getElementById('description').addEventListener('input', function() {
+    document.getElementById('account_item_id').dispatchEvent(new Event('change'));
+});
+
+// ページ読み込み時に勘定科目を選択
+window.addEventListener('DOMContentLoaded', function() {
+    const selectedAccountItemId = {{ selected_account_item_id if selected_account_item_id else 'null' }};
+    if (selected_account_item_id) {
+        const selectElement = document.getElementById('account_item_id');
+        selectElement.value = selectedAccountItemId;
+        // プレビューを更新
+        selectElement.dispatchEvent(new Event('change'));
+    }
+    
+    // タグマスターデータを読み込む
+    loadTagMasters();
+});
+
+// タグマスターデータを読み込む関数
+function loadTagMasters() {
+    // 取引先を読み込む
+    fetch('/api/counterparties/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('counterparty_id');
+                data.counterparties.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading counterparties:', error));
+    
+    // 部門を読み込む
+    fetch('/api/departments/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('department_id');
+                data.departments.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading departments:', error));
+    
+    // 品目を読み込む
+    fetch('/api/items/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('item_id');
+                data.items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading items:', error));
+    
+    // 案件タグを読み込む
+    fetch('/api/project-tags/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('project_tag_id');
+                data.project_tags.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.tag_name;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading project tags:', error));
+    
+    // メモタグを読み込む
+    fetch('/api/memo-tags/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('memo_tag_id');
+                data.memo_tags.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading memo tags:', error));
+}
+
+// 取引解除処理
+function deleteTransaction() {
+    if (!confirm('この取引を解除しますか？\n\n関連する仕訳データも削除されます。')) {
+        return;
+    }
+    
+    fetch('{{ url_for("transactions.imported_transaction_delete", id=transaction.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('取引を解除しました');
+            window.location.href = '{{ url_for("transactions.imported_transactions_list") }}';
+        } else {
+            alert('エラー: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('削除中にエラーが発生しました:', error);
+        alert('ネットワークエラーにより削除できませんでした。');
+    });
+}
+</script>
+{% endblock %}

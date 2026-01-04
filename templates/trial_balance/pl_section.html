@@ -1,0 +1,323 @@
+{# templates/trial_balance/pl_section.html #}
+
+<div class="section-title">損益計算書（P/L）</div>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th class="text-left" style="width:30%;">勘定科目</th>
+                <th style="width:23.3%;">借方金額</th>
+                <th style="width:23.3%;">貸方金額</th>
+                <th style="width:23.3%;">当期金額（期末残高）</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {# ===================== 売上高 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">売上高</td>
+            </tr>
+            {% for item in pl_stair_step_data["sales"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>売上高 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.sales_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 売上原価 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">売上原価</td>
+            </tr>
+            {% for item in pl_stair_step_data["cogs"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>売上原価 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.cogs_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 売上総利益 ===================== #}
+            <tr style="font-weight:700;">
+                <td>売上総利益</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.gross_profit or 0) }}
+                </td>
+            </tr>
+
+            {# ========== 販売費及び一般管理費（販管費） ========== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">販売費及び一般管理費</td>
+            </tr>
+            {% for item in pl_stair_step_data["sga"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>販売費及び一般管理費 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.sga_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 営業利益 ===================== #}
+            <tr style="font-weight:700;">
+                <td>営業利益</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.operating_income or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 営業外収益 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">営業外収益</td>
+            </tr>
+            {% for item in pl_stair_step_data["non_operating_income"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>営業外収益 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.non_operating_income_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 営業外費用 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">営業外費用</td>
+            </tr>
+            {% for item in pl_stair_step_data["non_operating_expense"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>営業外費用 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.non_operating_expense_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 経常利益 ===================== #}
+            <tr style="font-weight:700;">
+                <td>経常利益</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.ordinary_income or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 特別利益 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">特別利益</td>
+            </tr>
+            {% for item in pl_stair_step_data["extraordinary_income"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>特別利益 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.extraordinary_income_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 特別損失 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">特別損失</td>
+            </tr>
+            {% for item in pl_stair_step_data["extraordinary_loss"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>特別損失 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.extraordinary_loss_total or 0) }}
+                </td>
+            </tr>
+
+            {# ============== 税引前当期純利益 ============== #}
+            <tr style="font-weight:700;">
+                <td>税引前当期純利益</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.pre_tax_income or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 法人税等 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">法人税等</td>
+            </tr>
+            {% for item in pl_stair_step_data["income_taxes"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>法人税等 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.income_taxes_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 法人税等調整額 ===================== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="4">法人税等調整額</td>
+            </tr>
+            {% for item in pl_stair_step_data["income_taxes_adjustments"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit or 0) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit or 0) }}</td>
+                    <td class="amount">
+                        {% if (item.closing_balance or 0) >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance or 0) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr style="font-weight:700;">
+                <td>法人税等調整額 計</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.income_taxes_adjustments_total or 0) }}
+                </td>
+            </tr>
+
+            {# ===================== 当期純利益 ===================== #}
+            <tr style="font-weight:700;">
+                <td>当期純利益</td>
+                <td class="amount">-</td>
+                <td class="amount">-</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_calculations.net_income or 0) }}
+                </td>
+            </tr>
+
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td>合計</td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_debit_total or 0) }}
+                </td>
+                <td class="amount">
+                    {{ "{:,}".format(pl_credit_total or 0) }}
+                </td>
+                <td class="amount">-</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

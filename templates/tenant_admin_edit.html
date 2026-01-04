@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+  {% if store %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 }}</div>
+  {% endif %}
+  <h2 style="margin-top:12px">店舗管理者編集</h2>
+</div>
+
+<form method="post">
+  {% if get_csrf %}<input type="hidden" name="csrf_token" value="{{ get_csrf() }}">{% endif %}
+  
+  <div class="form-group">
+    <label for="login_id">ログインID</label>
+    <input type="text" id="login_id" name="login_id" value="{{ admin.login_id }}" required>
+  </div>
+  
+  <div class="form-group">
+    <label for="name">氏名</label>
+    <input type="text" id="name" name="name" value="{{ admin.name }}" required>
+  </div>
+  
+  <div class="form-group">
+    <label for="email">メールアドレス</label>
+    <input type="email" id="email" name="email" value="{{ admin.email or '' }}" placeholder="例）admin@example.com">
+  </div>
+  
+  {% if store_owner_map %}
+  <div class="form-group">
+    <label for="role">役割</label>
+    <input type="text" value="店舗管理者（オーナー）" readonly style="background-color:#f5f5f5">
+    <input type="hidden" name="role" value="admin">
+    <small style="color:#666;margin-top:4px;display:block">※ オーナーは役割を変更できません</small>
+  </div>
+  {% else %}
+  <div class="form-group">
+    <label for="role">役割</label>
+    <select id="role" name="role" required>
+      <option value="admin" {% if admin.role == 'admin' %}selected{% endif %}>店舗管理者</option>
+      <option value="tenant_admin" {% if admin.role == 'tenant_admin' %}selected{% endif %}>テナント管理者</option>
+      <option value="employee" {% if admin.role == 'employee' %}selected{% endif %}>従業員</option>
+    </select>
+    <small style="color:#666;margin-top:4px;display:block">役割を変更すると、アクセス権限が変わります。</small>
+  </div>
+  {% endif %}
+  
+  <div class="form-group">
+    <label for="password">パスワード（変更する場合のみ入力）</label>
+    <input type="password" id="password" name="password" placeholder="変更しない場合は空欄">
+  </div>
+  
+  <div class="form-group">
+    <label for="password_confirm">パスワード（確認）</label>
+    <input type="password" id="password_confirm" name="password_confirm" placeholder="もう一度入力">
+  </div>
+  
+  
+  <div class="form-group">
+    <label for="stores">管理する店舗 <span style="color:red">*</span></label>
+    {% if stores %}
+    <table style="border-collapse:collapse;width:100%">
+      {% for store in stores %}
+      <tr>
+        <td style="border:1px solid #ccc;padding:8px;width:40px;text-align:center">
+          <input type="checkbox" name="store_ids" value="{{ store.id }}" {% if store.id in admin_store_ids %}checked{% endif %}>
+        </td>
+        <td style="border:1px solid #ccc;padding:8px">
+          {{ store.名称 }}
+          {% if store_owner_map.get(store.id) == 1 %}
+            <span style="color:#ff9800;font-weight:bold;margin-left:8px">★ オーナー</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+      <p style="color:#999;margin:0">店舗が登録されていません。</p>
+    {% endif %}
+    <small style="color:#666">少なくとも1つの店舗を選択してください。</small>
+  </div>
+  
+  <div class="form-group" style="padding:16px;background:#f9f9f9;border-radius:8px">
+    {% if store_owner_map %}
+    <label style="display:flex;align-items:center;cursor:not-allowed;margin:0;opacity:0.6">
+      <input name="active" type="checkbox" value="1" checked disabled style="width:auto;margin-right:8px">
+      <span style="font-weight:normal">有効</span>
+    </label>
+    <input type="hidden" name="active" value="1">
+    <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+      ※ オーナーは常に有効です
+    </div>
+    {% else %}
+    <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+      <input name="active" type="checkbox" value="1" 
+             {% if admin.active == 1 %}checked{% endif %}
+             style="width:auto;margin-right:8px">
+      <span style="font-weight:normal">有効</span>
+    </label>
+    <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+      チェックを外すとこの店舗管理者は無効化されます。
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-group" style="padding:16px;background:#f9f9f9;border-radius:8px">
+    {% if store_owner_map %}
+    <label style="display:flex;align-items:center;cursor:not-allowed;margin:0;opacity:0.6">
+      <input name="can_manage_admins" type="checkbox" value="1" checked disabled style="width:auto;margin-right:8px">
+      <span style="font-weight:normal">管理者管理権限</span>
+    </label>
+    <input type="hidden" name="can_manage_admins" value="1">
+    <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+      ※ オーナーは常に管理者管理権限を持ちます
+    </div>
+    {% else %}
+    <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+      <input name="can_manage_admins" type="checkbox" value="1"
+             {% if admin.can_manage_admins == 1 %}checked{% endif %}
+             style="width:auto;margin-right:8px">
+      <span style="font-weight:normal">管理者管理権限</span>
+    </label>
+    <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+      チェックを入れるとこの店舗管理者は他の店舗管理者を管理できるようになります。
+    </div>
+    {% endif %}
+  </div>
+  
+  <div class="actions">
+    <button type="submit" class="btn">更新</button>
+    <a href="{{ url_for('tenant_admin.store_admins') }}" class="btn sub">キャンセル</a>
+  </div>
+</form>
+{% endblock %}

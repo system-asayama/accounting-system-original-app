@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}店舗管理者ダッシュボード{% endblock %}
+{% block content %}
+{% if tenant %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 }}</div>
+  {% if store %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">店舗管理者ダッシュボード</h1>
+</div>
+{% else %}
+<h1>店舗管理者ダッシュボード</h1>
+{% endif %}
+
+<div class="card">
+  <h2>ようこそ、{{ session.get('user_name') }}さん</h2>
+  {% if session.get('role') == 'system_admin' %}
+    <p>システム管理者としてログインしています。</p>
+  {% elif session.get('role') == 'tenant_admin' %}
+    <p>テナント管理者としてログインしています。</p>
+  {% else %}
+    <p>店舗管理者としてログインしています。</p>
+  {% endif %}
+  
+  <h3>ロール情報</h3>
+  <ul>
+    <li><strong>ユーザーID:</strong> {{ session.get('user_id') }}</li>
+    <li><strong>氏名:</strong> {{ session.get('user_name') }}</li>
+    <li><strong>ロール:</strong> {{ session.get('role') }}</li>
+    <li><strong>テナントID:</strong> {{ session.get('tenant_id') }}</li>
+  </ul>
+
+  <h3>管理機能</h3>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">
+    {% if apps and apps|length > 0 %}
+    <a class="card" href="{{ url_for('admin.available_apps') }}" style="text-decoration:none">
+      <h4>利用可能アプリ一覧</h4>
+      <p class="small" style="color:#666">利用可能なアプリの一覧を表示</p>
+    </a>
+    {% endif %}
+    <a class="card" href="{{ url_for('admin.store_info') }}" style="text-decoration:none">
+      <h4>店舗情報</h4>
+      <p class="small" style="color:#666">店舗情報の表示・編集</p>
+    </a>
+    <a class="card" href="{{ url_for('admin.admins') }}" style="text-decoration:none">
+      <h4>店舗管理者管理</h4>
+      <p class="small" style="color:#666">店舗管理者の作成・編集・削除</p>
+    </a>
+    <a class="card" href="{{ url_for('admin.employees') }}" style="text-decoration:none">
+      <h4>従業員管理</h4>
+      <p class="small" style="color:#666">従業員の作成・編集・削除</p>
+    </a>
+  </div>
+
+  <div style="margin-top:20px">
+    <a class="btn sub" href="{{ mypage_url }}">マイページ</a>
+    <a class="btn" href="{{ url_for('auth.logout') }}">ログアウト</a>
+  </div>
+</div>
+{% endblock %}

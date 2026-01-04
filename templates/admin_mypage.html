@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}マイページ{% endblock %}
+{% block content %}
+<h1>店舗管理者マイページ</h1>
+
+<div class="card" style="max-width:640px">
+  <h2>プロフィール情報</h2>
+  
+  <div style="margin-top:20px">
+    <table style="width:100%; border-collapse:collapse">
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; width:40%; white-space:nowrap">ユーザーID</th>
+        <td style="padding:8px">{{ user.id }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">ログインID</th>
+        <td style="padding:8px">{{ user.login_id }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">氏名</th>
+        <td style="padding:8px">{{ user.name }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">メールアドレス</th>
+        <td style="padding:8px; word-break:break-all; overflow-wrap:break-word">{{ user.email or '未設定' }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">ロール</th>
+        <td style="padding:8px">管理者</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">テナント名</th>
+        <td style="padding:8px">{{ tenant_name }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">所属店舗</th>
+        <td style="padding:8px">
+          {% for store in stores %}
+            ・ {{ store }}<br>
+          {% endfor %}
+        </td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">権限</th>
+        <td style="padding:8px">
+          {% if user.can_manage_admins %}
+            <span style="background-color:#28a745; color:white; padding:5px 10px; border-radius:3px; font-size:12px">管理者管理</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">作成日時</th>
+        <td style="padding:8px">{{ user.created_at }}</td>
+      </tr>
+      <tr>
+        <th style="text-align:left; padding:8px; white-space:nowrap">更新日時</th>
+        <td style="padding:8px">{{ user.updated_at }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <h2 style="margin-top:30px">プロフィール編集</h2>
+  <form method="POST" action="{{ url_for('admin.mypage') }}" style="margin-top:20px">
+    <input type="hidden" name="action" value="update_profile">
+    
+    <div style="margin-bottom:15px">
+      <label for="login_id" style="display:block; margin-bottom:5px">ログインID <span style="color:red">*</span></label>
+      <input type="text" id="login_id" name="login_id" value="{{ user.login_id }}" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="name" style="display:block; margin-bottom:5px">氏名 <span style="color:red">*</span></label>
+      <input type="text" id="name" name="name" value="{{ user.name }}" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="email" style="display:block; margin-bottom:5px">メールアドレス</label>
+      <input type="email" id="email" name="email" value="{{ user.email or '' }}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <button type="submit" class="btn">プロフィールを更新</button>
+  </form>
+
+  <h2 style="margin-top:30px">パスワード変更</h2>
+  <form method="POST" action="{{ url_for('admin.mypage') }}" style="margin-top:20px">
+    <input type="hidden" name="action" value="change_password">
+    <div style="margin-bottom:15px">
+      <label for="current_password" style="display:block; margin-bottom:5px">現在のパスワード</label>
+      <input type="password" id="current_password" name="current_password" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="new_password" style="display:block; margin-bottom:5px">新しいパスワード</label>
+      <input type="password" id="new_password" name="new_password" placeholder="8文字以上" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="new_password_confirm" style="display:block; margin-bottom:5px">新しいパスワード（確認）</label>
+      <input type="password" id="new_password_confirm" name="new_password_confirm" placeholder="もう一度入力" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <button type="submit" class="btn">パスワードを変更</button>
+  </form>
+
+  <h2 style="margin-top:30px">店舗選択</h2>
+  <p style="margin-top:10px; color:#666">ダッシュボードや各種管理機能にアクセスするには、店舗を選択してください。</p>
+  <form method="POST" action="{{ url_for('admin.select_store_from_mypage') }}" style="margin-top:20px">
+    <div style="margin-bottom:15px">
+      <label for="store_tenant_search" style="display:block; margin-bottom:5px">テナントを検索</label>
+      <input type="text" id="store_tenant_search" placeholder="テナント名で検索..." oninput="filterStoreTenants()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px; margin-bottom:10px">
+      <label for="store_tenant_id" style="display:block; margin-bottom:5px">テナントを選択</label>
+      <select id="store_tenant_id" onchange="filterStoresByTenant()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- テナントを選択してください --</option>
+        {% for tenant in tenant_list %}
+          <option value="{{ tenant.id }}" data-name="{{ tenant.name }}">{{ tenant.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-bottom:15px">
+      <label for="store_search" style="display:block; margin-bottom:5px">店舗を検索</label>
+      <input type="text" id="store_search" placeholder="店舗名で検索..." oninput="filterStoresBySearch()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px; margin-bottom:10px">
+      <label for="store_id" style="display:block; margin-bottom:5px">店舗を選択</label>
+      <select id="store_id" name="store_id" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- まずテナントを選択してください --</option>
+        {% for store in store_list %}
+          <option value="{{ store.id }}" data-name="{{ store.name }}" data-tenant-id="{{ store.tenant_id }}" style="display:none">{{ store.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">ダッシュボードへ進む</button>
+  </form>
+  
+  <script>
+  // テナント検索機能
+  function filterStoreTenants() {
+    const searchText = document.getElementById('store_tenant_search').value.toLowerCase();
+    const tenantSelect = document.getElementById('store_tenant_id');
+    const options = tenantSelect.querySelectorAll('option');
+    
+    let visibleCount = 0;
+    for (let i = 1; i < options.length; i++) {
+      const option = options[i];
+      const tenantName = option.dataset.name.toLowerCase();
+      
+      if (tenantName.includes(searchText)) {
+        option.style.display = '';
+        visibleCount++;
+      } else {
+        option.style.display = 'none';
+      }
+    }
+    
+    if (visibleCount === 0 && searchText) {
+      options[0].textContent = '-- 検索結果がありません --';
+    } else {
+      options[0].textContent = '-- テナントを選択してください --';
+    }
+  }
+  
+  // テナント選択時の店舗フィルタリング
+  function filterStoresByTenant() {
+    const tenantId = document.getElementById('store_tenant_id').value;
+    const storeSelect = document.getElementById('store_id');
+    const storeSearch = document.getElementById('store_search');
+    const options = storeSelect.querySelectorAll('option');
+    
+    // 全てのオプションを非表示にして選択をクリア
+    storeSelect.value = '';
+    storeSearch.value = ''; // 検索ボックスもクリア
+    
+    if (!tenantId) {
+      // テナントが未選択の場合
+      options[0].textContent = '-- まずテナントを選択してください --';
+      for (let i = 1; i < options.length; i++) {
+        options[i].style.display = 'none';
+      }
+    } else {
+      // テナントが選択されている場合
+      options[0].textContent = '-- 店舗を選択してください --';
+      let hasStores = false;
+      for (let i = 1; i < options.length; i++) {
+        const option = options[i];
+        if (option.dataset.tenantId === tenantId) {
+          option.style.display = '';
+          hasStores = true;
+        } else {
+          option.style.display = 'none';
+        }
+      }
+      
+      if (!hasStores) {
+        options[0].textContent = '-- 選択したテナントに店舗がありません --';
+      }
+    }
+  }
+  
+  // 店舗検索機能
+  function filterStoresBySearch() {
+    const searchText = document.getElementById('store_search').value.toLowerCase();
+    const tenantId = document.getElementById('store_tenant_id').value;
+    const storeSelect = document.getElementById('store_id');
+    const options = storeSelect.querySelectorAll('option');
+    
+    if (!tenantId) {
+      return; // テナントが未選択の場合は何もしない
+    }
+    
+    let visibleCount = 0;
+    for (let i = 1; i < options.length; i++) {
+      const option = options[i];
+      const storeName = option.dataset.name.toLowerCase();
+      const storeTenanId = option.dataset.tenantId;
+      
+      // テナントが一致し、かつ検索テキストにマッチする場合のみ表示
+      if (storeTenanId === tenantId && storeName.includes(searchText)) {
+        option.style.display = '';
+        visibleCount++;
+      } else {
+        option.style.display = 'none';
+      }
+    }
+    
+    if (visibleCount === 0 && searchText) {
+      options[0].textContent = '-- 検索結果がありません --';
+    } else if (visibleCount === 0) {
+      options[0].textContent = '-- 選択したテナントに店舗がありません --';
+    } else {
+      options[0].textContent = '-- 店舗を選択してください --';
+    }
+  }
+  </script>
+  
+  {% if session.get('store_id') %}
+  <div style="margin-top:20px">
+    <a class="btn sub" href="{{ url_for('admin.dashboard') }}">現在の店舗でダッシュボードに戻る</a>
+  </div>
+  {% endif %}
+  
+  <div style="margin-top:20px">
+    <a class="btn" href="{{ url_for('auth.logout') }}" style="background-color:#dc3545">ログアウト</a>
+  </div>
+</div>
+
+{% if get_flashed_messages() %}
+<div style="margin-top:20px">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

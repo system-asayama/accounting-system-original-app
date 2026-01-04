@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}マスター管理{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">マスター管理</h1>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">勘定科目を管理</h5>
+                    <p class="card-text">勘定科目の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('account_items.account_items_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">税区分を管理</h5>
+                    <p class="card-text">税区分の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('tax_categories.tax_categories_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">口座を管理</h5>
+                    <p class="card-text">口座の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('accounts.accounts_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">部門を管理</h5>
+                    <p class="card-text">部門の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('departments.departments_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">取引先を管理</h5>
+                    <p class="card-text">取引先の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('counterparties.counterparties_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">品目を管理</h5>
+                    <p class="card-text">品目の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('items.items_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">案件タグを管理</h5>
+                    <p class="card-text">案件タグの一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('project_tags.project_tags_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">メモタグを管理</h5>
+                    <p class="card-text">メモタグの一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('memo_tags.memo_tags_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">連続仕訳テンプレートを管理</h5>
+                    <p class="card-text">連続仕訳テンプレートの一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('templates.templates_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">出納帳マスターを管理</h5>
+                    <p class="card-text">出納帳マスターの一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('cash_book_masters.cash_book_masters_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">会計期間を管理</h5>
+                    <p class="card-text">会計期間の一覧表示、新規作成、編集、削除を行います。</p>
+                    <a href="{{ url_for('fiscal_periods.fiscal_periods_list') }}" class="btn btn-primary">管理画面へ</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

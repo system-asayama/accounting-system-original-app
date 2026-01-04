@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事業所を追加 - 会計システム</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-header h1 {
+            color: #667eea;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .form-header p {
+            color: #666;
+            font-size: 1rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .required {
+            color: #dc3545;
+            margin-left: 4px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            padding: 12px 40px;
+        }
+        .form-section {
+            margin-bottom: 30px;
+        }
+        .form-section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h1>新しい事業所を追加</h1>
+            <p>開発用：事業所情報を入力してください</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('organizations.organization_create_page') }}">
+            <!-- 基本情報 -->
+            <div class="form-section">
+                <div class="form-section-title">基本情報</div>
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">事業所名<span class="required">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="code" class="form-label">事業所コード</label>
+                    <input type="text" class="form-control" id="code" name="code" placeholder="例: COMPANY01">
+                    <small class="text-muted">半角英数字で入力してください</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="business_type" class="form-label">事業種別<span class="required">*</span></label>
+                    <select class="form-select" id="business_type" name="business_type" required>
+                        <option value="">選択してください</option>
+                        <option value="corporate">法人</option>
+                        <option value="individual">個人</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 代表者情報 -->
+            <div class="form-section">
+                <div class="form-section-title">代表者情報</div>
+                
+                <div class="mb-3">
+                    <label for="representative" class="form-label">代表者名</label>
+                    <input type="text" class="form-control" id="representative" name="representative" placeholder="例: 山田太郎">
+                </div>
+
+                <div class="mb-3">
+                    <label for="established_date" class="form-label">設立日</label>
+                    <input type="date" class="form-control" id="established_date" name="established_date">
+                </div>
+            </div>
+
+            <!-- 連絡先情報 -->
+            <div class="form-section">
+                <div class="form-section-title">連絡先情報</div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="postal_code" class="form-label">郵便番号</label>
+                        <input type="text" class="form-control" id="postal_code" name="postal_code" placeholder="例: 100-0001">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="address" class="form-label">住所</label>
+                    <input type="text" class="form-control" id="address" name="address" placeholder="例: 東京都千代田区千代田1-1">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">電話番号</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="例: 03-1234-5678">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="fax" class="form-label">FAX番号</label>
+                        <input type="tel" class="form-control" id="fax" name="fax" placeholder="例: 03-1234-5679">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">メールアドレス</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="例: info@example.com">
+                </div>
+            </div>
+
+            <!-- その他 -->
+            <div class="form-section">
+                <div class="form-section-title">その他</div>
+                
+                <div class="mb-3">
+                    <label for="notes" class="form-label">備考</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 5px;">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                    </svg>
+                    戻る
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 5px;">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                    </svg>
+                    事業所を追加
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

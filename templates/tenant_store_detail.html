@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}店舗詳細{% endblock %}
+{% block content %}
+<style>
+  @media (max-width: 768px) {
+    .card {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 0;
+    }
+    
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .info-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 0;
+    }
+    
+    .info-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .info-item:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: #666;
+      font-size: 0.85em;
+      margin-bottom: 4px;
+    }
+    
+    .info-value {
+      color: #333;
+      font-size: 0.95em;
+      word-break: break-all;
+    }
+    
+    .management-section {
+      margin-top: 20px;
+    }
+    
+    .management-section h3 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+    
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .grid .card {
+      padding: 1rem;
+    }
+    
+    .grid .card h4 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      flex: 1;
+      text-align: center;
+      min-width: 100px;
+    }
+  }
+</style>
+
+<h1>店舗詳細</h1>
+
+<div class="card">
+  <h2>{{ store['名称'] }}</h2>
+  
+  <div class="info-section" style="margin-top:20px">
+    <div class="info-item">
+      <div class="info-label">店舗ID</div>
+      <div class="info-value">{{ store.id }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">名称</div>
+      <div class="info-value">{{ store['名称'] }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Slug</div>
+      <div class="info-value">{{ store.slug }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">作成日時</div>
+      <div class="info-value">{{ store.created_at }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">更新日時</div>
+      <div class="info-value">{{ store.updated_at }}</div>
+    </div>
+  </div>
+
+  <div class="management-section" style="margin-top:30px">
+    <h3>管理機能</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">
+      <a class="card" href="{{ url_for('tenant_admin.admins') }}" style="text-decoration:none">
+        <h4>店舗管理者管理</h4>
+        <p class="small" style="color:#666">店舗管理者の作成・編集・削除（{{ admin_count }}人）</p>
+      </a>
+      <a class="card" href="{{ url_for('tenant_admin.employees') }}" style="text-decoration:none">
+        <h4>従業員管理</h4>
+        <p class="small" style="color:#666">従業員の作成・編集・削除（{{ employee_count }}人）</p>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="actions" style="margin-top:20px">
+    <a class="btn" href="{{ url_for('tenant_admin.store_edit', store_id=store.id) }}">編集</a>
+    <a class="btn sub" href="{{ url_for('tenant_admin.stores') }}">戻る</a>
+  </div>
+</div>
+{% endblock %}

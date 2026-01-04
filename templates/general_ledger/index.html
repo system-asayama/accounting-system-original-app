@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}仕訳帳 - 会計システム{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">仕訳帳</h2>
+    
+    <!-- 会計期間選択 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports.general_ledger') }}" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="fiscal_period_id" class="form-label fw-bold">会計期間:</label>
+                    <select name="fiscal_period_id" id="fiscal_period_id" class="form-select" onchange="this.form.submit()">
+                        {% for period in fiscal_periods %}
+                        <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>
+                            {{ period.period_name }} ({{ period.start_date }} 〜 {{ period.end_date }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 仕訳帳データ -->
+    {% if general_ledger_entries %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 10%;">取引日</th>
+                            <th style="width: 15%;">借方勘定科目</th>
+                            <th style="width: 12%;" class="text-end">借方金額</th>
+                            <th style="width: 15%;">貸方勘定科目</th>
+                            <th style="width: 12%;" class="text-end">貸方金額</th>
+                            <th style="width: 20%;">摘要</th>
+                            <th style="width: 8%;">元データ</th>
+                            <th style="width: 8%;">備考</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in general_ledger_entries %}
+                        <tr>
+                            <td>{{ entry.transaction_date }}</td>
+                            <td>{{ entry.debit_account_item.account_name if entry.debit_account_item else '-' }}</td>
+                            <td class="text-end">{{ "{:,}".format(entry.debit_amount) }}</td>
+                            <td>{{ entry.credit_account_item.account_name if entry.credit_account_item else '-' }}</td>
+                            <td class="text-end">{{ "{:,}".format(entry.credit_amount) }}</td>
+                            <td>{{ entry.summary or '-' }}</td>
+                            <td>
+                                {% if entry.source_type == 'journal_entry' %}
+                                    <a href="{{ url_for('journal_entries.journal_entry_edit', entry_id=entry.source_id) }}" class="badge bg-primary text-decoration-none">振替伝票</a>
+                                {% elif entry.source_type == 'cash_book' %}
+                                    <a href="{{ url_for('cash_books.cash_book_edit', item_id=entry.source_id) }}" class="badge bg-success text-decoration-none">出納帳</a>
+                                {% elif entry.source_type == 'batch_entry' %}
+                                    <a href="{{ url_for('cash_books.batch_create_cash_books_page') }}?edit={{ entry.source_id }}" class="badge bg-warning text-dark text-decoration-none">連続仕訳</a>
+                                {% elif entry.source_type == 'imported_transaction' %}
+                                    <a href="{{ url_for('transactions.imported_transaction_edit', id=entry.source_id) }}" class="badge bg-info text-decoration-none">取引明細</a>
+                                {% else %}
+                                    <span class="badge bg-secondary">その他</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entry.remarks %}
+                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                            data-bs-toggle="tooltip" data-bs-placement="left" 
+                                            title="{{ entry.remarks }}">
+                                        <i class="bi bi-info-circle"></i>
+                                    </button>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted">合計 {{ general_ledger_entries|length }} 件の仕訳</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        選択された会計期間に仕訳データがありません。
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Bootstrap tooltipの初期化
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+{% endblock %}

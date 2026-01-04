@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}管理者新規作成{% endblock %}
+
+{% block content %}
+<h2>管理者新規作成</h2>
+
+<form method="post">
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">ログインID</label>
+    <input type="text" name="login_id" required style="width:100%;max-width:400px;padding:8px">
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">氏名</label>
+    <input type="text" name="name" required style="width:100%;max-width:400px;padding:8px">
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">メールアドレス</label>
+    <input type="email" name="email" placeholder="例）admin@example.com" style="width:100%;max-width:400px;padding:8px">
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">パスワード</label>
+    <input type="password" name="password" required minlength="8" placeholder="8文字以上" style="width:100%;max-width:400px;padding:8px">
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">パスワード(確認)</label>
+    <input type="password" name="password_confirm" required minlength="8" placeholder="もう一度入力" style="width:100%;max-width:400px;padding:8px">
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:4px">
+      <input type="checkbox" name="is_owner" value="1" style="margin-right:8px">
+      オーナー権限（同じ店舗の他の管理者を編集・削除可能）
+    </label>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label style="display:block;margin-bottom:8px">管理する店舗 <span style="color:red">*</span></label>
+    <div style="border:1px solid #ddd;padding:12px;border-radius:4px;max-height:200px;overflow-y:auto;max-width:400px">
+      {% if stores %}
+        {% for store in stores %}
+        <label style="display:block;margin-bottom:8px;cursor:pointer">
+          <input type="checkbox" name="store_ids" value="{{ store.id }}" style="margin-right:8px">
+          {{ store['名称'] }}
+        </label>
+        {% endfor %}
+      {% else %}
+        <p style="color:#999;margin:0">店舗が登録されていません。まず店舗を作成してください。</p>
+      {% endif %}
+    </div>
+    <small style="color:#666">少なくとも1つの店舗を選択してください。</small>
+  </div>
+
+  <div style="margin-top:24px">
+    <button type="submit" class="btn">作成</button>
+    <a href="{{ back_url }}" class="btn secondary">キャンセル</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}出納帳マスター一覧{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">出納帳マスター</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">出納帳マスター一覧</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" action="{{ url_for('cash_book_masters.cash_book_masters_list') }}" class="d-flex">
+                <input type="search" name="search" class="form-control me-2" placeholder="出納帳名を検索" value="{{ search_query }}">
+                <button class="btn btn-outline-success" type="submit">検索</button>
+            </form>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{{ url_for('cash_book_masters.cash_book_master_create') }}" class="btn btn-primary">新規作成</a>
+        </div>
+    </div>
+
+    {% if accounts %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>出納帳名（口座）</th>
+                        <th>説明</th>
+                        <th>一覧表示</th>
+                        <th>作成日時</th>
+                        <th>更新日時</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                    <tr>
+                        <td>{{ account.id }}</td>
+                        <td>{{ account.account_name }}</td>
+                        <td>{{ account.description or '-' }}</td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="visibility_{{ account.id }}" 
+                                       {% if account.is_visible_in_list %}checked{% endif %}
+                                       onchange="toggleVisibility({{ account.id }}, this.checked)">
+                                <label class="form-check-label" for="visibility_{{ account.id }}">
+                                    {% if account.is_visible_in_list %}表示{% else %}非表示{% endif %}
+                                </label>
+                            </div>
+                        </td>
+                        <td>{{ account.created_at }}</td>
+                        <td>{{ account.updated_at }}</td>
+                        <td>
+                            <a href="{{ url_for('accounts.account_edit', account_id=account.id) }}" class="btn btn-sm btn-outline-secondary me-2">編集</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ account.id }}, '{{ account.account_name }}')"削除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            出納帳マスター（口座）はまだ登録されていません。
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal and Script -->
+<script>
+function toggleVisibility(accountId, isVisible) {
+    fetch(`/api/accounts/${accountId}/toggle-visibility`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_visible: isVisible })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // ラベルを更新
+            const label = document.querySelector(`label[for="visibility_${accountId}"]`);
+            label.textContent = isVisible ? '表示' : '非表示';
+        } else {
+            alert(`更新に失敗しました: ${data.message}`);
+            // チェックボックスを元に戻す
+            document.getElementById(`visibility_${accountId}`).checked = !isVisible;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('更新中にエラーが発生しました。');
+        // チェックボックスを元に戻す
+        document.getElementById(`visibility_${accountId}`).checked = !isVisible;
+    });
+}
+
+function confirmDelete(itemId, itemName) {
+    if (confirm(`出納帳マスター「${itemName}」を削除してもよろしいですか？`)) {
+        fetch(`/api/cash-book-masters/${itemId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // FlaskのCSRF保護がないため、ここではボディは空でOK
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload(); // 成功したらページをリロード
+            } else {
+                alert(`削除に失敗しました: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('削除中にエラーが発生しました。');
+        });
+    }
+}
+</script>
+{% endblock %}

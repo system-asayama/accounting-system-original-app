@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}勘定科目一覧 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #ddd;
+        background-color: white;
+        border-radius: 4px 4px 0 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
+    
+    .tab {
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: #666;
+        font-size: 1rem;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+    
+    .tab:hover {
+        background-color: #f5f5f5;
+        color: #3498db;
+    }
+    
+    .tab.active {
+        color: #3498db;
+        font-weight: 600;
+    }
+    
+    .tab-count {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.2rem 0.5rem;
+        background-color: #ecf0f1;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .tab.active .tab-count {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .search-form {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .search-form input {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 300px;
+        margin-right: 0.5rem;
+    }
+    
+    .table-container {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background-color: #34495e;
+        color: white;
+    }
+    
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ddd;
+        white-space: nowrap;
+    }
+    
+    tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .action-buttons {
+        white-space: nowrap;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        margin-right: 0.25rem;
+    }
+    
+    .pagination {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+    
+    .pagination a, .pagination span {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        margin: 0.25rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #3498db;
+    }
+    
+    .pagination a:hover {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .pagination .current {
+        background-color: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+    
+    .stats {
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background-color: #ecf0f1;
+        border-radius: 4px;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .badge-yes {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .badge-no {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>勘定科目一覧</h2>
+
+<!-- 大分類タブ -->
+<div class="tabs">
+    <a href="{{ url_for('account_items.account_items_list', search=search_query) }}" 
+       class="tab {% if not category_filter %}active{% endif %}">
+        すべて
+        <span class="tab-count">{{ category_counts.get('all', 0) }}</span>
+    </a>
+    <a href="{{ url_for('account_items.account_items_list', category='損益', search=search_query) }}" 
+       class="tab {% if category_filter == '損益' %}active{% endif %}">
+        損益
+        <span class="tab-count">{{ category_counts.get('損益', 0) }}</span>
+    </a>
+    <a href="{{ url_for('account_items.account_items_list', category='資産', search=search_query) }}" 
+       class="tab {% if category_filter == '資産' %}active{% endif %}">
+        資産
+        <span class="tab-count">{{ category_counts.get('資産', 0) }}</span>
+    </a>
+    <a href="{{ url_for('account_items.account_items_list', category='負債', search=search_query) }}" 
+       class="tab {% if category_filter == '負債' %}active{% endif %}">
+        負債
+        <span class="tab-count">{{ category_counts.get('負債', 0) }}</span>
+    </a>
+    <a href="{{ url_for('account_items.account_items_list', category='純資産', search=search_query) }}" 
+       class="tab {% if category_filter == '純資産' %}active{% endif %}">
+        純資産
+        <span class="tab-count">{{ category_counts.get('純資産', 0) }}</span>
+    </a>
+</div>
+
+<!-- 中分類タブ -->
+{% if category_filter and mid_categories %}
+<div class="tabs" style="margin-top: 0.5rem; background-color: #f8f9fa;">
+    <a href="{{ url_for('account_items.account_items_list', category=category_filter, search=search_query) }}" 
+       class="tab {% if not mid_filter %}active{% endif %}" style="font-size: 0.9rem;">
+        すべて
+    </a>
+    {% for mid_cat in mid_categories %}
+    <a href="{{ url_for('account_items.account_items_list', category=category_filter, mid=mid_cat.name, search=search_query) }}" 
+       class="tab {% if mid_filter == mid_cat.name %}active{% endif %}" style="font-size: 0.9rem;">
+        {{ mid_cat.name }}
+        <span class="tab-count">{{ mid_cat.count }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 小分類タブ -->
+{% if mid_filter and sub_categories %}
+<div class="tabs" style="margin-top: 0.5rem; background-color: #e9ecef;">
+    <a href="{{ url_for('account_items.account_items_list', category=category_filter, mid=mid_filter, search=search_query) }}" 
+       class="tab {% if not sub_filter %}active{% endif %}" style="font-size: 0.85rem;">
+        すべて
+    </a>
+    {% for sub_cat in sub_categories %}
+    <a href="{{ url_for('account_items.account_items_list', category=category_filter, mid=mid_filter, sub=sub_cat.name, search=search_query) }}" 
+       class="tab {% if sub_filter == sub_cat.name %}active{% endif %}" style="font-size: 0.85rem;">
+        {{ sub_cat.name }}
+        <span class="tab-count">{{ sub_cat.count }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="search-form">
+    <form method="GET" action="{{ url_for('account_items.account_items_list') }}">
+        <input type="hidden" name="category" value="{{ category_filter }}">
+        <input type="hidden" name="mid" value="{{ mid_filter }}">
+        <input type="hidden" name="sub" value="{{ sub_filter }}">
+        <input type="text" name="search"
+               placeholder="勘定科目名、表示名で検索..."
+               value="{{ search_query }}">
+        <button type="submit" class="btn btn-primary">検索</button>
+        {% if search_query %}
+            <a href="{{ url_for('account_items.account_items_list', category=category_filter, mid=mid_filter, sub=sub_filter) }}" class="btn btn-secondary">クリア</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="stats">
+    <strong>合計:</strong> {{ total_items }} 件
+    {% if category_filter %}
+        <span>({{ category_filter }}{% if mid_filter %} &gt; {{ mid_filter }}{% endif %}{% if sub_filter %} &gt; {{ sub_filter }}{% endif %})</span>
+    {% endif %}
+    {% if search_query %}
+        <span>(検索結果: 「{{ search_query }}」)</span>
+    {% endif %}
+</div>
+
+{% if items %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>勘定科目</th>
+                    <th>表示名</th>
+                    <th>大分類</th>
+                    <th>中分類</th>
+                    <th>小分類</th>
+                    <th>表示順</th>
+                    <th>税区分</th>
+                    <th>収入取引相手方</th>
+                    <th>支出取引相手方</th>
+                    <th>ショートカット1</th>
+                    <th>ショートカット2</th>
+                    <th>補助科目優先タグ</th>
+                    <th>入力候補</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td><strong>{{ item.account_name }}</strong></td>
+                        <td>{{ item.display_name or '-' }}</td>
+                        <td>{{ item.major_category or '-' }}</td>
+                        <td>{{ item.mid_category or '-' }}</td>
+                        <td>{{ item.sub_category or '-' }}</td>
+                        <td>{{ item.bs_rank if item.bs_rank else '-' }}</td>
+                        <td>{{ item.tax_category or '-' }}</td>
+                        <td>{{ item.income_counterpart or '-' }}</td>
+                        <td>{{ item.expense_counterpart or '-' }}</td>
+                        <td>{{ item.shortcut1 or '-' }}</td>
+                        <td>{{ item.shortcut2 or '-' }}</td>
+                        <td>{{ item.sub_account_priority_tag or '-' }}</td>
+                        <td>
+                            {% if item.input_candidate %}
+                                <span class="badge badge-yes">YES</span>
+                            {% else %}
+                                <span class="badge badge-no">NO</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-buttons">
+                            <a href="{{ url_for('account_items.account_item_edit', item_id=item.id) }}"
+                               class="btn btn-primary">編集</a>
+                            <button class="btn btn-danger"
+                                    onclick="deleteItem({{ item.id }}, '{{ item.account_name }}')">
+                                削除
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="{{ url_for('account_items.account_items_list', page=1, category=category_filter, mid=mid_filter, sub=sub_filter, search=search_query) }}">最初</a>
+                <a href="{{ url_for('account_items.account_items_list', page=page-1, category=category_filter, mid=mid_filter, sub=sub_filter, search=search_query) }}">前へ</a>
+            {% endif %}
+            
+            {% for p in range(1, total_pages + 1) %}
+                {% if p >= page - 2 and p <= page + 2 %}
+                    {% if p == page %}
+                        <span class="current">{{ p }}</span>
+                    {% else %}
+                        <a href="{{ url_for('account_items.account_items_list', page=p, category=category_filter, mid=mid_filter, sub=sub_filter, search=search_query) }}">{{ p }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if page < total_pages %}
+                <a href="{{ url_for('account_items.account_items_list', page=page+1, category=category_filter, mid=mid_filter, sub=sub_filter, search=search_query) }}">次へ</a>
+                <a href="{{ url_for('account_items.account_items_list', page=total_pages, category=category_filter, mid=mid_filter, sub=sub_filter, search=search_query) }}">最後</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info">
+        {% if search_query %}
+            「{{ search_query }}」に該当する勘定科目はありません。
+        {% else %}
+            {% if category_filter %}
+                {{ category_filter }}の勘定科目はまだ登録されていません。
+            {% else %}
+                勘定科目がまだ登録されていません。
+            {% endif %}
+        {% endif %}
+    </div>
+{% endif %}
+
+<div style="margin-top: 1rem;">
+    <a href="{{ url_for('account_items.account_item_create') }}" class="btn btn-success">新規追加</a>
+    <button class="btn btn-info"
+            onclick="document.getElementById('importFile').click()"
+            style="margin-left: 0.5rem;">
+        CSV/Excelでインポート
+    </button>
+    <input type="file" id="importFile"
+           style="display: none;"
+           accept=".csv,.xlsx,.xls"
+           onchange="handleFileImport(event)">
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteItem(itemId, accountName) {
+    var msg = '勘定科目「' + accountName + '」を削除してもよろしいですか？';
+    if (!confirm(msg)) {
+        return;
+    }
+    fetch('/api/account-items/' + itemId + '/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('削除に失敗しました: ' + data.message);
+        }
+    })
+    .catch(function(error) {
+        alert('エラーが発生しました: ' + error);
+    });
+}
+
+function handleFileImport(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    var formData = new FormData();
+    formData.append('file', file);
+    
+    var btn = event.target.previousElementSibling;
+    var originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'インポート中...';
+    
+    fetch('/import-account-items', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        
+        if (data.success) {
+            alert('成功: ' + data.message);
+            location.reload();
+        } else {
+            alert('インポートに失敗しました: ' + data.message);
+        }
+    })
+    .catch(function(error) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        alert('エラーが発生しました: ' + error);
+    });
+    
+    event.target.value = '';
+}
+</script>
+{% endblock %}

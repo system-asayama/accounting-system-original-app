@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}取引明細一覧{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">ホーム</a></li>
+            <li class="breadcrumb-item active" aria-current="page">取引明細一覧</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">取引明細一覧</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">検索条件</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('transactions.imported_transactions_list') }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="account_name" class="form-label">口座</label>
+                        <select class="form-select" id="account_name" name="account_name">
+                            <option value="">すべて</option>
+                            {% for account in accounts %}
+                            <option value="{{ account.account_name }}" {% if account_name == account.account_name %}selected{% endif %}>{{ account.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="status" class="form-label">ステータス</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">すべて</option>
+                            <option value="0" {% if status == '0' %}selected{% endif %}>未処理</option>
+                            <option value="1" {% if status == '1' %}selected{% endif %}>処理済み</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="date_from" class="form-label">取引日（開始）</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="date_to" class="form-label">取引日（終了）</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('transactions.transaction_import') }}" class="btn btn-primary">新規インポート</a>
+                    <button type="submit" class="btn btn-outline-success">検索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if transactions %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">取引明細（{{ transactions|length }}件）</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>取引日</th>
+                            <th>口座</th>
+                            <th>摘要</th>
+                            <th class="text-end">入金</th>
+                            <th class="text-end">出金</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.transaction_date }}</td>
+                            <td>{{ transaction.account_name }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td class="text-end">
+                                {% if transaction.income_amount > 0 %}
+                                {{ '{:,}'.format(transaction.income_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if transaction.expense_amount > 0 %}
+                                {{ '{:,}'.format(transaction.expense_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.status == 0 %}
+                                <span class="badge bg-warning text-dark">未処理</span>
+                                {% else %}
+                                <span class="badge bg-success">処理済み</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('transactions.imported_transaction_edit', id=transaction.id) }}" class="btn btn-sm btn-outline-primary">編集</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        取引明細が見つかりませんでした。<a href="{{ url_for('transactions.transaction_import') }}" class="alert-link">新規インポート</a>からCSV/Excelファイルをアップロードしてください。
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

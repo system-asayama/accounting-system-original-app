@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}期首残高の設定 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .period-selector {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .period-selector label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .period-selector select {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-width: 250px;
+    }
+    
+    .table-container {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    thead {
+        background-color: #34495e;
+        color: white;
+    }
+    
+    th {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #ddd;
+    }
+    
+    td {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+    }
+    
+    .text-left {
+        text-align: left !important;
+    }
+    
+    .text-right {
+        text-align: right !important;
+    }
+    
+    .amount-input {
+        width: 100%;
+        text-align: right;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .total-row {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .save-button {
+        margin-top: 1rem;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid #34495e;
+    }
+    
+    .info-box {
+        background-color: #e7f3ff;
+        border-left: 4px solid #2196F3;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+    }
+    
+    .info-box p {
+        margin: 0;
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">期首残高の設定</h1>
+    
+    <div class="info-box">
+        <p>前期の決算書の数値、または開始時点の残高を入力してください。</p>
+        <p>開始残高を登録することで、試算表に期首残高が反映されます。</p>
+    </div>
+
+    <div class="period-selector">
+        <form method="get" action="{{ url_for('reports.opening_balances') }}" class="form-inline">
+            <label for="fiscal_period_id">会計期間:</label>
+            <select name="fiscal_period_id" id="fiscal_period_id" class="form-control" onchange="this.form.submit()">
+                {% for period in fiscal_periods %}
+                    <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>
+                        {{ period.name }} ({{ period.start_date }} ~ {{ period.end_date }})
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <form method="post" action="{{ url_for('reports.save_opening_balances') }}" id="opening-balance-form">
+        <input type="hidden" name="fiscal_period_id" value="{{ selected_period_id }}">
+        
+        <div class="table-container">
+            <div class="section-title">{{ selected_period.name }}の期首残高</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="text-left" style="width: 30%;">勘定科目</th>
+                        <th style="width: 35%;">借方 (資産)</th>
+                        <th style="width: 35%;">貸方 (負債・純資産)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in balance_data %}
+                    <tr>
+                        <td class="text-left">{{ item.account_item.account_name }}</td>
+                        <td>
+                            <input type="number" 
+                                   name="debit_{{ item.account_item.id }}" 
+                                   class="amount-input debit-input" 
+                                   value="{{ item.debit_amount if item.debit_amount != 0 else '' }}"
+                                   step="0.01"
+                                   min="0"
+                                   placeholder="0">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   name="credit_{{ item.account_item.id }}" 
+                                   class="amount-input credit-input" 
+                                   value="{{ item.credit_amount if item.credit_amount != 0 else '' }}"
+                                   step="0.01"
+                                   min="0"
+                                   placeholder="0">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td class="text-left">合計</td>
+                        <td class="text-right" id="debit-total">{{ "{:,.0f}".format(debit_total) }}</td>
+                        <td class="text-right" id="credit-total">{{ "{:,.0f}".format(credit_total) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary save-button">保存</button>
+            <a href="{{ url_for('home.home') }}" class="btn btn-secondary save-button">戻る</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// 借方・貸方の合計を自動計算
+function updateTotals() {
+    let debitTotal = 0;
+    let creditTotal = 0;
+    
+    document.querySelectorAll('.debit-input').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        debitTotal += value;
+    });
+    
+    document.querySelectorAll('.credit-input').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        creditTotal += value;
+    });
+    
+    document.getElementById('debit-total').textContent = debitTotal.toLocaleString('ja-JP', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    document.getElementById('credit-total').textContent = creditTotal.toLocaleString('ja-JP', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+}
+
+// 入力フィールドの変更を監視
+document.querySelectorAll('.amount-input').forEach(input => {
+    input.addEventListener('input', updateTotals);
+});
+
+// フォーム送信前の確認
+document.getElementById('opening-balance-form').addEventListener('submit', function(e) {
+    const debitTotal = parseFloat(document.getElementById('debit-total').textContent.replace(/,/g, '')) || 0;
+    const creditTotal = parseFloat(document.getElementById('credit-total').textContent.replace(/,/g, '')) || 0;
+    
+    if (Math.abs(debitTotal - creditTotal) > 0.01) {
+        if (!confirm('借方合計と貸方合計が一致していません。このまま保存しますか？')) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
+{% endblock %}

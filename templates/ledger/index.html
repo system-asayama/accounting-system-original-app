@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}総勘定元帳{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">総勘定元帳</h2>
+    
+    <!-- 選択フォーム -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports.ledger') }}" class="row g-3">
+                <div class="col-md-6">
+                    <label for="fiscal_period_id" class="form-label">会計期間</label>
+                    <select class="form-select" id="fiscal_period_id" name="fiscal_period_id" required>
+                        <option value="">-- 選択してください --</option>
+                        {% for period in fiscal_periods %}
+                        <option value="{{ period.id }}" {% if selected_fiscal_period and selected_fiscal_period.id == period.id %}selected{% endif %}>
+                            {{ period.period_name }} ({{ period.start_date }} 〜 {{ period.end_date }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="account_item_id" class="form-label">勘定科目</label>
+                    <select class="form-select" id="account_item_id" name="account_item_id" required>
+                        <option value="">-- 選択してください --</option>
+                        {% for item in account_items %}
+                        <option value="{{ item.id }}" {% if selected_account_item and selected_account_item.id == item.id %}selected{% endif %}>
+                            {{ item.account_name }} ({{ item.major_category }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">表示</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if selected_fiscal_period and selected_account_item %}
+    <!-- ヘッダー情報 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4 class="card-title">{{ selected_account_item.account_name }}</h4>
+            <p class="card-text">
+                <strong>事業所:</strong> {{ current_organization.name }}<br>
+                <strong>期間:</strong> {{ selected_fiscal_period.period_name }} ({{ selected_fiscal_period.start_date }} 〜 {{ selected_fiscal_period.end_date }})<br>
+                <strong>期首残高:</strong> <span class="{% if opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">{{ "{:,}".format(opening_balance|int) }}</span>
+            </p>
+        </div>
+    </div>
+    
+    {% if transactions %}
+    <!-- 取引一覧 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>取引日</th>
+                            <th>相手勘定科目</th>
+                            <th>摘要</th>
+                            <th class="text-end">借方金額</th>
+                            <th class="text-end">貸方金額</th>
+                            <th class="text-end">残高</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set current_month = None %}
+                        {% for transaction in transactions %}
+                            {% set transaction_month = transaction.date[:7] %}
+                            {% if current_month != transaction_month %}
+                                {% if current_month %}
+                                    <!-- 月次合計行 -->
+                                    {% for monthly in monthly_totals %}
+                                        {% if monthly.month == current_month %}
+                                        <tr class="table-secondary">
+                                            <td colspan="3" class="text-center"><strong>{{ current_month }} 合計</strong></td>
+                                            <td class="text-end"><strong>{{ "{:,}".format(monthly.debit_total|int) }}</strong></td>
+                                            <td class="text-end"><strong>{{ "{:,}".format(monthly.credit_total|int) }}</strong></td>
+                                            <td></td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% set current_month = transaction_month %}
+                            {% endif %}
+                            
+                            <tr>
+                                <td>{{ transaction.date.replace('-', '/') }}</td>
+                                <td>{{ transaction.counterpart_account }}</td>
+                                <td>{{ transaction.summary }}</td>
+                                <td class="text-end">
+                                    {% if transaction.debit > 0 %}
+                                    {{ "{:,}".format(transaction.debit|int) }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if transaction.credit > 0 %}
+                                    {{ "{:,}".format(transaction.credit|int) }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end {% if transaction.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ "{:,}".format(transaction.balance|int) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        
+                        <!-- 最後の月の合計行 -->
+                        {% if current_month %}
+                            {% for monthly in monthly_totals %}
+                                {% if monthly.month == current_month %}
+                                <tr class="table-secondary">
+                                    <td colspan="3" class="text-center"><strong>{{ current_month }} 合計</strong></td>
+                                    <td class="text-end"><strong>{{ "{:,}".format(monthly.debit_total|int) }}</strong></td>
+                                    <td class="text-end"><strong>{{ "{:,}".format(monthly.credit_total|int) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted mt-3">取引件数: {{ transactions|length }}件</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        選択された勘定科目と期間に取引データがありません。
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

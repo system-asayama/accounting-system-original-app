@@ -1,0 +1,249 @@
+<div class="section-title">貸借対照表（B/S）</div>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th class="text-left" style="width:30%;">勘定科目</th>
+                <th style="width:17.5%;">期首残高</th>
+                <th style="width:17.5%;">借方金額</th>
+                <th style="width:17.5%;">貸方金額</th>
+                <th style="width:17.5%;">期末残高</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {# ===== 資産の部 ===== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="5">資産の部</td>
+            </tr>
+
+            {# 流動資産 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 流動資産</td>
+            </tr>
+            {% for item in bs_stair_step_data["流動資産"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# 固定資産 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 固定資産</td>
+            </tr>
+            {% for item in bs_stair_step_data["固定資産"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# 投資その他の資産 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 投資その他の資産</td>
+            </tr>
+            {% for item in bs_stair_step_data["投資その他の資産"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# ===== 負債の部 ===== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="5">負債の部</td>
+            </tr>
+
+            {# 流動負債 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 流動負債</td>
+            </tr>
+            {% for item in bs_stair_step_data["流動負債"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# 固定負債 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 固定負債</td>
+            </tr>
+            {% for item in bs_stair_step_data["固定負債"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# ===== 純資産の部 ===== #}
+            <tr style="background:#ecf0f1;font-weight:700;">
+                <td colspan="5">純資産の部</td>
+            </tr>
+
+            {# 資本金 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 資本金</td>
+            </tr>
+            {% for item in bs_stair_step_data["資本金"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# 資本剰余金 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 資本剰余金</td>
+            </tr>
+            {% for item in bs_stair_step_data["資本剰余金"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {# 利益剰余金 #}
+            <tr style="background:#f8f9fa;font-weight:600;">
+                <td colspan="5">▼ 利益剰余金</td>
+            </tr>
+            {% for item in bs_stair_step_data["利益剰余金"] %}
+                <tr>
+                    <td class="indent-1">{{ item.account_item.account_name }}</td>
+                    <td class="amount">
+                        {% if item.opening_balance >= 0 %}
+                            {{ "{:,}".format(item.opening_balance) }}
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.opening_balance) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="amount">{{ "{:,}".format(item.current_debit) }}</td>
+                    <td class="amount">{{ "{:,}".format(item.current_credit) }}</td>
+                    <td class="amount">
+                        {% if item.closing_balance >= 0 %}
+                            <span class="balance-debit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% else %}
+                            <span class="balance-credit">{{ "{:,}".format(item.closing_balance) }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td>合計</td>
+                <td class="amount">-</td>
+                <td class="amount">{{ "{:,}".format(bs_debit_total) }}</td>
+                <td class="amount">{{ "{:,}".format(bs_credit_total) }}</td>
+                <td class="amount">-</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

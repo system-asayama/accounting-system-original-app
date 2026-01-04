@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{% if organization %}事業所編集{% else %}事業所作成{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('organizations.organizations_list') }}">事業所</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% if organization %}編集{% else %}新規作成{% endif %}</li>
+    </ol>
+</nav>
+
+<h2>{% if organization %}事業所編集{% else %}事業所作成{% endif %}</h2>
+
+<form method="post" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="name" class="form-label">事業所名 *</label>
+            <input type="text" class="form-control" id="name" name="name" 
+                   value="{% if organization %}{{ organization.name }}{% endif %}" 
+                   placeholder="例: 株式会社〇〇、山田太郎" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="code" class="form-label">事業所コード</label>
+            <input type="text" class="form-control" id="code" name="code" 
+                   value="{% if organization %}{{ organization.code }}{% endif %}" 
+                   placeholder="例: ORG001">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="business_type" class="form-label">事業種別 *</label>
+            <select class="form-select" id="business_type" name="business_type" required>
+                <option value="corporate" {% if organization and organization.business_type == 'corporate' %}selected{% endif %}>法人</option>
+                <option value="individual" {% if organization and organization.business_type == 'individual' %}selected{% endif %}>個人</option>
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="representative" class="form-label">代表者名</label>
+            <input type="text" class="form-control" id="representative" name="representative" 
+                   value="{% if organization %}{{ organization.representative }}{% endif %}" 
+                   placeholder="例: 山田太郎">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="postal_code" class="form-label">郵便番号</label>
+            <input type="text" class="form-control" id="postal_code" name="postal_code" 
+                   value="{% if organization %}{{ organization.postal_code }}{% endif %}" 
+                   placeholder="例: 123-4567">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="established_date" class="form-label">設立日/開業日</label>
+            <input type="date" class="form-control" id="established_date" name="established_date" 
+                   value="{% if organization %}{{ organization.established_date }}{% endif %}">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="address" class="form-label">住所</label>
+        <input type="text" class="form-control" id="address" name="address" 
+               value="{% if organization %}{{ organization.address }}{% endif %}" 
+               placeholder="例: 東京都渋谷区〇〇1-2-3">
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="phone" class="form-label">電話番号</label>
+            <input type="tel" class="form-control" id="phone" name="phone" 
+                   value="{% if organization %}{{ organization.phone }}{% endif %}" 
+                   placeholder="例: 03-1234-5678">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="fax" class="form-label">FAX番号</label>
+            <input type="tel" class="form-control" id="fax" name="fax" 
+                   value="{% if organization %}{{ organization.fax }}{% endif %}" 
+                   placeholder="例: 03-1234-5679">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="email" class="form-label">メールアドレス</label>
+            <input type="email" class="form-control" id="email" name="email" 
+                   value="{% if organization %}{{ organization.email }}{% endif %}" 
+                   placeholder="例: info@example.com">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="notes" class="form-label">備考</label>
+        <textarea class="form-control" id="notes" name="notes" rows="3">{% if organization %}{{ organization.notes }}{% endif %}</textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">{% if organization %}更新{% else %}作成{% endif %}</button>
+        <a href="{{ url_for('organizations.organizations_list') }}" class="btn btn-secondary">キャンセル</a>
+    </div>
+</form>
+{% endblock %}

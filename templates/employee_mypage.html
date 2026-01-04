@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}従業員マイページ{% endblock %}
+{% block content %}
+<h1>従業員マイページ</h1>
+
+<div class="card">
+  <h2>ようこそ、{{ session.user_name }}さん</h2>
+  <p>従業員としてログインしています。</p>
+  
+  <div style="margin-top:20px">
+    <h3>基本情報</h3>
+    <ul>
+      <li><strong>ユーザーID:</strong> {{ user.id }}</li>
+      <li><strong>ログインID:</strong> {{ user.login_id }}</li>
+      <li><strong>氏名:</strong> {{ user.name }}</li>
+      <li><strong>メールアドレス:</strong> {{ user.email or '未設定' }}</li>
+      <li><strong>テナント:</strong> {{ tenant_name }}</li>
+      <li><strong>所属店舗:</strong> {{ stores|join(', ') if stores else '未設定' }}</li>
+    </ul>
+  </div>
+</div>
+
+<!-- プロフィール編集 -->
+<div class="card" style="margin-top:20px">
+  <h3>プロフィール編集</h3>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="action" value="update_profile">
+    
+    <label>ログインID <span style="color:var(--danger)">*</span></label>
+    <input name="login_id" type="text" required value="{{ user.login_id }}" placeholder="employee01">
+    
+    <label>氏名 <span style="color:var(--danger)">*</span></label>
+    <input name="name" type="text" required value="{{ user.name }}" placeholder="山田 太郎">
+    
+    <label>メールアドレス</label>
+    <input name="email" type="email" value="{{ user.email or '' }}" placeholder="example@example.com">
+    
+    <div style="margin-top:12px">
+      <button class="btn" type="submit">プロフィールを更新</button>
+    </div>
+  </form>
+</div>
+
+<!-- パスワード変更 -->
+<div class="card" style="margin-top:20px">
+  <h3>パスワード変更</h3>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="action" value="change_password">
+    
+    <label>現在のパスワード <span style="color:var(--danger)">*</span></label>
+    <input name="current_password" type="password" required placeholder="現在のパスワード">
+    
+    <label>新しいパスワード <span style="color:var(--danger)">*</span></label>
+    <input name="new_password" type="password" required placeholder="8文字以上">
+    
+    <label>新しいパスワード（確認） <span style="color:var(--danger)">*</span></label>
+    <input name="confirm_password" type="password" required placeholder="もう一度入力">
+    
+    <div style="margin-top:12px">
+      <button class="btn" type="submit">パスワードを変更</button>
+    </div>
+  </form>
+</div>
+
+<!-- 店舗選択 -->
+{% if store_list %}
+<div class="card" style="margin-top:20px">
+  <h3>店舗選択</h3>
+  <p>作業する店舗を選択してください。</p>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="action" value="select_store">
+    
+    <label>店舗</label>
+    <select name="store_id" required>
+      <option value="">-- 店舗を選択 --</option>
+      {% for store in store_list %}
+      <option value="{{ store.id }}" {% if session.store_id == store.id %}selected{% endif %}>{{ store.name }}</option>
+      {% endfor %}
+    </select>
+    
+    <div style="margin-top:12px">
+      <button class="btn" type="submit">店舗を選択</button>
+    </div>
+  </form>
+  
+  {% if session.store_id %}
+  <p style="margin-top:12px;color:var(--success)">
+    <strong>現在選択中の店舗ID:</strong> {{ session.store_id }}
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:20px">
+  <a class="btn" href="{{ url_for('auth.logout') }}">ログアウト</a>
+</div>
+{% endblock %}

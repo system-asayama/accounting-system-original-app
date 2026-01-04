@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}インポートテンプレート管理 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .templates-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .templates-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .template-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5rem;
+    }
+    
+    .template-table thead {
+        background-color: #34495e;
+        color: white;
+    }
+    
+    .template-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .template-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .template-table tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .template-actions {
+        white-space: nowrap;
+    }
+    
+    .template-actions .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        margin-right: 0.25rem;
+    }
+    
+    .empty-message {
+        text-align: center;
+        padding: 2rem;
+        color: #7f8c8d;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #0c5460;
+    }
+    
+    .mapping-details {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="templates-container">
+    <h2>インポートテンプレート管理</h2>
+    
+    <div class="templates-section">
+        <div class="info-box">
+            <strong>テンプレートについて</strong><br>
+            マッピング設定を保存することで、次回以降は同じフォーマットのファイルを簡単にインポートできます。
+        </div>
+        
+        {% if templates %}
+            <table class="template-table">
+                <thead>
+                    <tr>
+                        <th>テンプレート名</th>
+                        <th>ファイル形式</th>
+                        <th>スキップ行</th>
+                        <th>マッピング情報</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for template in templates %}
+                        {% set mapping = template.mapping_json | tojson %}
+                        <tr>
+                            <td><strong>{{ template.name }}</strong></td>
+                            <td>{{ template.file_type | upper }}</td>
+                            <td>{{ template.skip_rows }}</td>
+                            <td>
+                                <div class="mapping-details">
+                                    {% if 'date_col' in template.mapping_json %}
+                                        取引日: 列{{ template.mapping_json.date_col }}<br>
+                                    {% endif %}
+                                    {% if 'amount_col' in template.mapping_json %}
+                                        金額: 列{{ template.mapping_json.amount_col }}<br>
+                                    {% endif %}
+                                    {% if 'counterparty_col' in template.mapping_json %}
+                                        取引先: 列{{ template.mapping_json.counterparty_col }}<br>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="template-actions">
+                                <button class="btn btn-danger" onclick="deleteTemplate({{ template.id }}, '{{ template.name }}')">
+                                    削除
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-message">
+                <div class="empty-icon">📋</div>
+                <p>保存済みのテンプレートがありません。</p>
+                <p style="margin-bottom: 1.5rem;">
+                    <a href="{{ url_for('import_data.import_page') }}" class="btn btn-primary">
+                        新しいテンプレートを作成
+                    </a>
+                </p>
+            </div>
+        {% endif %}
+        
+        <p style="margin-top: 2rem; text-align: center;">
+            <a href="{{ url_for('import_data.import_page') }}" class="btn btn-secondary">
+                インポートに戻る
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteTemplate(templateId, templateName) {
+    if (confirm(`テンプレート「${templateName}」を削除してもよろしいですか？`)) {
+        fetch(`/api/import-templates/${templateId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('削除に失敗しました: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('エラーが発生しました: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

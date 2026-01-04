@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}店舗詳細{% endblock %}
+{% block content %}
+{% if tenant %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 }}</div>
+  {% if store_obj %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store_obj.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">店舗詳細</h1>
+</div>
+{% else %}
+<h1>店舗詳細</h1>
+{% endif %}
+<style>
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table th {
+    text-align: left;
+    padding: 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+  }
+  
+  .table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    word-break: break-word;
+  }
+  
+  /* スマホ用カード型レイアウト */
+  @media (max-width: 768px) {
+    .table {
+      display: block;
+      overflow-x: auto;
+    }
+    
+    .table tbody {
+      display: block;
+    }
+    
+    .table tr {
+      display: flex;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .table th {
+      flex: 0 0 120px;
+      padding: 4px 8px;
+      background: transparent;
+      border: none;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+    
+    .table td {
+      flex: 1;
+      padding: 4px 8px;
+      border: none;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+  }
+</style>
+
+<div class="card">
+  <h2>{{ store['名称'] }}</h2>
+  <table class="table">
+    <tbody>
+      <tr>
+        <th style="width:200px">店舗ID</th>
+        <td>{{ store.id }}</td>
+      </tr>
+      <tr>
+        <th>名称</th>
+        <td>{{ store['名称'] }}</td>
+      </tr>
+      <tr>
+        <th>Slug</th>
+        <td><code style="background:#f5f5f5;padding:2px 6px;border-radius:4px">{{ store.slug }}</code></td>
+      </tr>
+      <tr>
+        <th>郵便番号</th>
+        <td>{{ store['郵便番号'] if store['郵便番号'] else '' }}</td>
+      </tr>
+      <tr>
+        <th>住所</th>
+        <td>{{ store['住所'] if store['住所'] else '' }}</td>
+      </tr>
+      <tr>
+        <th>電話番号</th>
+        <td>{{ store['電話番号'] if store['電話番号'] else '' }}</td>
+      </tr>
+      <tr>
+        <th>e-mailアドレス</th>
+        <td>{{ store.email if store.email else '' }}</td>
+      </tr>
+      <tr>
+        <th>OpenAI APIキー</th>
+        <td>{{ '設定済み' if store.openai_api_key else '未設定' }}</td>
+      </tr>
+      <tr>
+        <th>有効</th>
+        <td>
+          {% if store['有効'] == 1 %}
+            <span style="color:green">✓ 有効</span>
+          {% else %}
+            <span style="color:red">× 無効</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>作成日時</th>
+        <td style="color:#666">{{ store.created_at }}</td>
+      </tr>
+      <tr>
+        <th>更新日時</th>
+        <td style="color:#666">{{ store.updated_at if store.updated_at else store.created_at }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top:20px">
+  <a class="btn" href="{{ url_for('admin.store_edit', store_id=store.id) }}">編集</a>
+  <button class="btn" type="button" style="background:#d32f2f" onclick="showDeleteModal()">削除</button>
+</div>
+
+<div style="margin-top:20px">
+  <a class="btn" href="{{ url_for('admin.admins') }}">店舗管理者管理</a>
+  <a class="btn" href="{{ url_for('admin.employees') }}">従業員管理</a>
+</div>
+
+<div style="margin-top:20px">
+  <a class="btn" href="{{ url_for('admin.available_apps') }}">利用可能アプリ一覧</a>
+  <a class="btn sub" href="{{ url_for('admin.store_info') }}">戻る</a>
+</div>
+
+<!-- 削除確認モーダル -->
+<div id="deleteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;" onclick="if(event.target===this) hideDeleteModal()">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;max-width:500px;width:90%;">
+    <h2 style="color:#d32f2f;margin-top:0">⚠️ 警告</h2>
+    <p style="margin-bottom:20px;line-height:1.6">
+      <strong>{{ store['名称'] }}</strong> を削除すると、以下の関連データも全て削除されます：
+    </p>
+    <ul style="margin-bottom:20px;line-height:1.8;color:#666">
+      <li>店舗に紐づく全ての管理者の紐付け</li>
+      <li>店舗に紐づく全ての従業員の紐付け</li>
+      <li>店舗に紐づく全てのアプリ設定</li>
+    </ul>
+    <p style="margin-bottom:20px;color:#d32f2f;font-weight:bold">
+      この操作は取り消せません。
+    </p>
+    <p style="margin-bottom:10px">
+      削除を実行するには、ログイン時のパスワードを入力してください：
+    </p>
+    <form id="deleteForm" method="post" action="{{ url_for('admin.store_delete', store_id=store.id) }}">
+      {% if get_csrf %}<input type="hidden" name="csrf_token" value="{{ get_csrf() }}">{% endif %}
+      <input type="password" name="password" placeholder="パスワード" required 
+             style="width:100%;padding:10px;margin-bottom:20px;border:1px solid #ddd;border-radius:4px;font-size:16px">
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn sub" onclick="hideDeleteModal()">キャンセル</button>
+        <button type="submit" class="btn" style="background:#d32f2f">削除する</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'block';
+}
+
+function hideDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+</script>
+
+{% endblock %}

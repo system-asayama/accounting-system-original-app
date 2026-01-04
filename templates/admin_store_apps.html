@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}店舗アプリ一覧{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>店舗アプリ一覧</h1>
+  
+  <div class="store-info" style="background-color:#f5f5f5; padding:15px; border-radius:5px; margin-bottom:30px">
+    <h2>{{ store.store_name }}</h2>
+    <p><strong>店舗ID:</strong> {{ store.id }}</p>
+    <p><strong>Slug:</strong> <code>{{ store.slug }}</code></p>
+  </div>
+
+  <div class="apps-container">
+    {% if apps and apps|length > 0 %}
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px">
+        {% for app in apps %}
+        <div class="app-card" style="background-color:#fff; border:1px solid #ddd; border-radius:8px; padding:20px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition:transform 0.2s, box-shadow 0.2s">
+          <div style="display:flex; align-items:center; margin-bottom:15px">
+            <div style="width:50px; height:50px; border-radius:8px; background-color:{{ app.color if app.color else '#4CAF50' }}; display:flex; align-items:center; justify-content:center; margin-right:15px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:18px; color:#333">{{ app.display_name }}</h3>
+            </div>
+          </div>
+          
+          <p style="color:#666; font-size:14px; margin-bottom:20px; min-height:40px">
+            {{ app.description if app.description else 'アプリの説明がありません' }}
+          </p>
+          
+          <a href="{{ app.url }}" class="btn" style="display:block; text-align:center; text-decoration:none; background-color:{{ app.color if app.color else '#4CAF50' }}; color:#fff; padding:10px 20px; border-radius:5px; font-weight:bold">
+            アプリを開く
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state" style="text-align:center; padding:60px 20px; background-color:#f9f9f9; border-radius:8px; border:2px dashed #ddd">
+        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:20px">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="9" x2="15" y2="9"></line>
+          <line x1="9" y1="15" x2="15" y2="15"></line>
+        </svg>
+        <h3 style="color:#666; margin-bottom:10px">利用可能なアプリはありません</h3>
+        <p style="color:#999">現在、この店舗で利用できるアプリはありません。</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:30px">
+    <a class="btn sub" href="{{ url_for('admin.store_info') }}">店舗一覧に戻る</a>
+  </div>
+</div>
+
+<style>
+.app-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}

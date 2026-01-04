@@ -1,0 +1,9 @@
+Flask
+SQLAlchemy
+psycopg[binary]
+psycopg2-binary
+gunicorn
+Alembic
+python-dotenv
+openpyxl
+markdown

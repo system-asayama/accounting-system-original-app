@@ -1,0 +1,2085 @@
+{% extends "base.html" %}
+
+{% block title %}連続仕訳登録{% endblock %}
+
+{% block sticky_header %}
+<div class="card" style="margin: 0; position: sticky; top: 60px; z-index: 100; background-color: white; border-radius: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 1rem;">
+        <!-- タイトル -->
+        <h2 style="margin-bottom: 1rem;">連続仕訳登録</h2>
+        
+        <!-- 種類と口座の選択 -->
+        <div class="d-flex align-items-start mb-3">
+            <div class="me-4">
+                <label for="account-type-select" class="me-2 fw-bold">種類:</label>
+                <select id="account-type-select" class="form-control" style="width: 200px;">
+                    <option value="">選択してください</option>
+                    <option value="口座">口座</option>
+                    <option value="売掛金・未収金">売掛金・未収金</option>
+                    <option value="買掛金・未払金">買掛金・未払金</option>
+                </select>
+            </div>
+            <div>
+                <label for="account-select" class="me-2 fw-bold">口座:</label>
+                <div style="width: 200px;">
+                    <select id="account-select" class="form-control"></select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- モード切替ボタン -->
+        <div style="margin-top: 0.5rem;">
+            <button type="button" class="btn btn-sm btn-secondary" id="toggle-tag-mode-btn" onclick="toggleTagMode()">
+                <span id="tag-mode-label">詳細モードに切替</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <!-- カスタム選択モーダル -->
+    <div id="customSelectModal" class="custom-select-modal">
+        <div class="custom-select-modal-content">
+            <div class="custom-select-header">
+                <h2 id="customSelectTitle">候補を選択</h2>
+                <span class="custom-select-close">&times;</span>
+            </div>
+            <div class="custom-select-body">
+                <input type="text" id="customSelectSearch" class="form-control mb-3" placeholder="検索..." onkeydown="handleModalSearchKeydown(event)">
+                <div id="customSelectGrid" class="custom-select-grid">
+                    <!-- 候補がここに挿入される -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+.remarks-input {
+    width: 300px !important;
+}
+
+/* テーブルの枠線とレイアウト */
+#transaction-table-header,
+#transaction-table-body,
+#transaction-table-input {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#transaction-table-header th,
+#transaction-table-body td,
+#transaction-table-input td {
+    border: 1px solid #ddd;
+    padding: 3px 4px; /* パディングを大幅に縮小 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px; /* フォントサイズを小さく */
+    line-height: 1.3;
+}
+
+/* colgroupで列幅を制御するため、nth-child()での幅指定は削除 */
+
+.table-scroll-container {
+    border: 1px solid #ddd;
+    border-top: none;
+    border-bottom: none;
+    overflow-y: scroll; /* スクロールバーを常に表示 */
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+/* テーブル内のボタンを小さく */
+#transaction-table-body .btn-sm,
+#transaction-table-input .btn-sm {
+    padding: 2px 4px;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+/* 入力行テーブルを画面下部に固定 */
+#transaction-table-input-container {
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    z-index: 10;
+    border-top: 2px solid #333;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+/* カスタム選択モーダルのスタイル */
+.custom-select-modal {
+    display: none; /* 初期状態では非表示 */
+    position: fixed;
+    z-index: 1050; /* Bootstrap Modalより少し高めに設定 */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4); /* 半透明の背景 */
+}
+.custom-select-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 上から5%の位置に表示 */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* 幅を広く取る */
+    max-width: 1000px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+.custom-select-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.custom-select-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+.custom-select-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.custom-select-close:hover,
+.custom-select-close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+.custom-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 項目を複数列で表示 */
+    gap: 10px;
+    margin-top: 15px;
+    max-height: 60vh; /* 最大高さを設定 */
+    overflow-y: auto;
+}
+.custom-select-item {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.custom-select-item:hover {
+    background-color: #f0f0f0;
+}
+.custom-select-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+.custom-select-trigger {
+    cursor: pointer;
+    background-color: #fff;
+}
+.unified-tags-select {
+    cursor: pointer !important;
+}
+.counterparty-select, .item-select, .department-select, .project-tag-select, .memo-tag-select {
+    cursor: pointer !important;
+}
+/* readonly属性を持つフィールドに対しても明示的にポインターを設定 */
+input[readonly].custom-select-trigger {
+    cursor: pointer !important;
+}
+input[readonly].unified-tags-select {
+    cursor: pointer !important;
+}
+input[readonly].counterparty-select,
+input[readonly].item-select,
+input[readonly].department-select,
+input[readonly].project-tag-select,
+input[readonly].memo-tag-select {
+    cursor: pointer !important;
+}
+</style>
+
+<!-- 新規登録フォーム -->
+<div class="card" style="margin-bottom: 20px;">
+    
+    <form id="batch-form">
+        <!-- ヘッダーテーブル（固定） -->
+        <div class="table-container">
+            <table class="table table-bordered" id="transaction-table-header">
+                <colgroup>
+                    <col style="width: 90px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                    <col style="width: 100px;">
+                    <col class="unified-tag-col" style="width: 60px;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col style="width: 100px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>発生日</th>
+                        <th>テンプレート</th>
+                        <th>勘定科目</th>
+                        <th>税区分</th>
+                        <th class="unified-tag-header">タグ（統合）</th>
+                        <th class="detail-tag-header" style="display: none;">取引先</th>
+                        <th class="detail-tag-header" style="display: none;">品目</th>
+                        <th class="detail-tag-header" style="display: none;">部門</th>
+                        <th class="detail-tag-header" style="display: none;">案件タグ</th>
+                        <th class="detail-tag-header" style="display: none;">メモタグ</th>
+                        <th>備考</th>
+                        <th>収入金額</th>
+                        <th>支出金額</th>
+                        <th>期末残高</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        
+        <!-- 登録済みデータテーブル（スクロール可能） -->
+        <div class="table-scroll-container" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-bordered" id="transaction-table-body">
+                <colgroup>
+                    <col style="width: 90px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                    <col style="width: 100px;">
+                    <col class="unified-tag-col" style="width: 60px;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col style="width: 100px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                </colgroup>
+                <tbody id="registered-transactions-tbody">
+                    <!-- 登録済み仕訳がここに表示される（逆順にして最新が一番下に来るように） -->
+                    {% for cb in cash_books|reverse %}
+                    <tr data-id="{{ cb.id }}" data-account-item-id="{{ cb.account_item_id }}" data-tax-category-id="{{ cb.tax_category_id }}">
+                        <td>{{ cb.transaction_date }}</td>
+                        <td>-</td>
+                        <td>{{ cb.account_item_name }}</td>
+                        <td>{{ cb.tax_category }}</td>
+                        <td class="unified-tag-cell">
+                            {% set tags = [] %}
+                            {% if cb.counterparty %}{% set _ = tags.append(cb.counterparty + ' (取引先)') %}{% endif %}
+                            {% if cb.item_name %}{% set _ = tags.append(cb.item_name + ' (品目)') %}{% endif %}
+                            {% if cb.department %}{% set _ = tags.append(cb.department + ' (部門)') %}{% endif %}
+                            {% if cb.project_tag %}{% set _ = tags.append(cb.project_tag + ' (案件)') %}{% endif %}
+                            {% if cb.memo_tag %}{% set _ = tags.append(cb.memo_tag + ' (メモ)') %}{% endif %}
+                            {{ tags|join(', ') if tags else '-' }}
+                        </td>
+                        <td class="detail-tag-cell" style="display: none;">{{ cb.counterparty or '-' }}</td>
+                        <td class="detail-tag-cell" style="display: none;">{{ cb.item_name or '-' }}</td>
+                        <td class="detail-tag-cell" style="display: none;">{{ cb.department or '-' }}</td>
+                        <td class="detail-tag-cell" style="display: none;">{{ cb.project_tag or '-' }}</td>
+                        <td class="detail-tag-cell" style="display: none;">{{ cb.memo_tag or '-' }}</td>
+                        <td>{{ cb.remarks or '-' }}</td>
+                        <td style="text-align: right;">{{ '{:,}'.format(cb.deposit_amount) if cb.deposit_amount else '-' }}</td>
+                        <td style="text-align: right;">{{ '{:,}'.format(cb.withdrawal_amount) if cb.withdrawal_amount else '-' }}</td>
+                        <td style="text-align: right;">{{ '{:,}'.format(cb.tax_amount) if cb.tax_amount else '-' }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="editCashBook({{ cb.id }})">編集</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashBook({{ cb.id }})">削除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 入力行テーブル（固定） -->
+        <div class="table-container" id="transaction-table-input-container">
+            <table class="table table-bordered" id="transaction-table-input">
+                <colgroup>
+                    <col style="width: 90px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                    <col style="width: 100px;">
+                    <col class="unified-tag-col" style="width: 60px;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col class="detail-tag-col" style="width: 60px; display: none;">
+                    <col style="width: 100px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 100px;">
+                </colgroup>
+                <tbody id="input-transactions-tbody">
+                    <!-- 入力行がJavaScriptで動的に追加される -->
+                </tbody>
+            </table>
+        </div>
+        
+        <button type="button" class="btn btn-secondary" onclick="addRow()">＋ 行を追加</button>
+        <button type="button" class="btn btn-primary" onclick="submitBatch()">一括登録</button>
+    </form>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// グローバルスコープに関数を定義し、HTMLのonclickからアクセス可能にする
+
+// 登録済み仕訳を削除する関数
+async function deleteCashBook(cashBookId) {
+    if (!confirm('この仕訳を削除してもよろしいですか？')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/cash-books/${cashBookId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('仕訳を削除しました。');
+            // 削除した行をDOMから削除
+            const row = document.querySelector(`tr[data-id="${cashBookId}"]`);
+            if (row) {
+                row.remove();
+            }
+            // ページ全体をリロードしても良いが、今回はDOM操作で対応
+            // window.location.reload();
+        } else {
+            alert('削除中にエラーが発生しました: ' + result.message);
+            console.error('APIエラー:', result);
+        }
+    } catch (error) {
+        alert('ネットワークエラーにより削除に失敗しました。');
+        console.error('ネットワークエラー:', error);
+    }
+}
+
+// 勘定科目データを格納するグローバル変数
+let allAccountItems = [];
+// 消費税区分データを格納するグローバル変数
+let allTaxCategories = [];
+// 口座データを格納するグローバル変数
+let allAccounts = [];
+// タグマスターデータを格納するグローバル変数
+let allCounterparties = [];
+let allTemplates = []; // テンプレートデータを格納するグローバル変数
+let allDepartments = [];
+let allItems = [];
+let allProjectTags = [];
+let allMemoTags = [];
+
+// 勘定科目データをAPIから取得し、グローバル変数に格納する
+async function fetchAccountItems() {
+    try {
+        const response = await fetch('{{ url_for("get_all_account_items") }}');
+        const data = await response.json();
+        if (data.success) {
+            // Tom Selectの表示用にデータを整形
+            allAccountItems = data.account_items.map(item => ({
+                id: item.id,
+                account_name: item.account_name,
+                display_name: `${item.account_name} (${item.major_category})`,
+                major_category: item.major_category
+            }));
+        } else {
+            console.error('勘定科目データの取得に失敗しました:', data.message);
+            alert('勘定科目データの取得に失敗しました。ページをリロードしてください。');
+        }
+    } catch (error) {
+        console.error('勘定科目データの取得中にエラーが発生しました:', error);
+        alert('ネットワークエラーにより勘定科目データが取得できませんでした。');
+    }
+}
+
+// 消費税区分データをAPIから取得し、グローバル変数に格納する
+async function fetchTaxCategories() {
+    try {
+        const response = await fetch('{{ url_for("get_all_tax_categories") }}');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.tax_categories)) {
+            allTaxCategories = data.tax_categories.map(tc => ({ id: tc.id, name: tc.name }));
+        } else if (Array.isArray(data)) {
+            // 互換性のため、配列が直接返される場合にも対応
+            allTaxCategories = data;
+        } else {
+            console.error('消費税区分データの取得に失敗しました:', data.message);
+            alert('消費税区分データの取得に失敗しました。ページをリロードしてください。');
+        }
+    } catch (error) {
+        console.error('消費税区分データの取得中にエラーが発生しました:', error);
+        alert('ネットワークエラーにより消費税区分データが取得できませんでした。');
+    }
+}
+
+// テンプレートデータをAPIから取得し、グローバル変数に格納する
+async function fetchTemplates() {
+    try {
+        const response = await fetch('{{ url_for("get_all_templates") }}');
+        const data = await response.json();
+        allTemplates = data;
+        console.log('allTemplates:', allTemplates);
+    } catch (error) {
+        console.error('テンプレートデータの取得中にエラーが発生しました:', error);
+    }
+}
+
+// 口座データをAPIから取得し、グローバル変数に格納する
+async function fetchAccounts() {
+    try {
+        const response = await fetch('{{ url_for("get_all_accounts") }}');
+        const data = await response.json();
+        if (data.success) {
+            allAccounts = data.accounts.map(account => ({
+                id: account.id,
+                account_name: account.account_name,
+                account_number: account.account_number,
+                account_type: account.account_type,
+                display_name: `${account.account_name}${account.account_number ? ' (' + account.account_number + ')' : ''}`
+            }));
+            console.log('allAccounts:', allAccounts);
+        } else {
+            console.error('口座データの取得に失敗しました:', data.message);
+            console.error('APIレスポンス:', data);
+            alert('口座データの取得に失敗しました。ページをリロードしてください。');
+        }
+    } catch (error) {
+        console.error('口座データの取得中にエラーが発生しました:', error);
+        alert('ネットワークエラーにより口座データが取得できませんでした。');
+    }
+}
+
+// タグマスターデータをAPIから取得する
+async function fetchTagMasters() {
+    try {
+        // 取引先を読み込む
+        const counterpartiesResponse = await fetch('/api/counterparties/all');
+        const counterpartiesData = await counterpartiesResponse.json();
+        if (counterpartiesData.success) {
+            allCounterparties = counterpartiesData.counterparties;
+            console.log('allCounterparties loaded:', allCounterparties);
+        }
+        
+        // 部門を読み込む
+        const departmentsResponse = await fetch('/api/departments/all');
+        const departmentsData = await departmentsResponse.json();
+        if (departmentsData.success) {
+            allDepartments = departmentsData.departments;
+            console.log('allDepartments loaded:', allDepartments);
+        }
+        
+        // 品目を読み込む
+        const itemsResponse = await fetch('/api/items/all');
+        const itemsData = await itemsResponse.json();
+        if (itemsData.success) {
+            allItems = itemsData.items;
+            console.log('allItems loaded:', allItems);
+        }
+        
+        // 案件タグを読み込む
+        const projectTagsResponse = await fetch('/api/project-tags/all');
+        const projectTagsData = await projectTagsResponse.json();
+        if (projectTagsData.success) {
+            allProjectTags = projectTagsData.project_tags;
+            console.log('allProjectTags loaded:', allProjectTags);
+        }
+        
+        // メモタグを読み込む
+        const memoTagsResponse = await fetch('/api/memo-tags/all');
+        const memoTagsData = await memoTagsResponse.json();
+        if (memoTagsData.success) {
+            allMemoTags = memoTagsData.memo_tags;
+            console.log('allMemoTags loaded:', allMemoTags);
+        }
+    } catch (error) {
+        console.error('タグマスターデータの取得中にエラーが発生しました:', error);
+    }
+}
+
+// テンプレートを適用する関数
+function applyTemplate(rowIndex, templateId) {
+    const template = allTemplates.find(t => t.id == templateId);
+    if (!template) {
+        console.error(`テンプレートID ${templateId} が見つかりません。`);
+        return;
+    }
+
+    const row = document.querySelector(`#transaction-table tbody tr:nth-child(${rowIndex + 1})`);
+    if (!row) return;
+
+    // 勘定科目
+    const accountItem = allAccountItems.find(ai => ai.id == template.account_item_id);
+    if (accountItem) {
+        row.querySelector('input[name="account_item_display"]').value = accountItem.account_name;
+        row.querySelector('input[name="account_item_id"]').value = accountItem.id;
+    }
+
+    // 税区分
+    const taxCategory = allTaxCategories.find(tc => tc.id == template.tax_category_id);
+    if (taxCategory) {
+        row.querySelector('input[name="tax_category_display"]').value = taxCategory.name;
+        row.querySelector('input[name="tax_category_id"]').value = taxCategory.id;
+    }
+
+    // 取引先
+    const counterparty = allCounterparties.find(c => c.id == template.counterparty_id);
+    if (counterparty) {
+        row.querySelector('input[name="counterparty_display"]').value = counterparty.tag_name;
+        row.querySelector('input[name="counterparty_id"]').value = counterparty.id;
+    }
+
+    // 品目
+    const item = allItems.find(i => i.id == template.item_id);
+    if (item) {
+        row.querySelector('input[name="item_display"]').value = item.tag_name;
+        row.querySelector('input[name="item_id"]').value = item.id;
+    }
+
+    // 部門
+    const department = allDepartments.find(d => d.id == template.department_id);
+    if (department) {
+        row.querySelector('input[name="department_display"]').value = department.tag_name;
+        row.querySelector('input[name="department_id"]').value = department.id;
+    }
+
+    // 案件タグ
+    const projectTag = allProjectTags.find(pt => pt.id == template.project_tag_id);
+    if (projectTag) {
+        row.querySelector('input[name="project_tag_display"]').value = projectTag.tag_name;
+        row.querySelector('input[name="project_tag_id"]').value = projectTag.id;
+    }
+
+    // メモタグ
+    const memoTag = allMemoTags.find(mt => mt.id == template.memo_tag_id);
+    if (memoTag) {
+        row.querySelector('input[name="memo_tag_display"]').value = memoTag.tag_name;
+        row.querySelector('input[name="memo_tag_id"]').value = memoTag.id;
+    }
+
+    // 備考
+    row.querySelector('input[name="remarks"]').value = template.remarks || '';
+
+    // 金額
+    row.querySelector('input[name="deposit_amount"]').value = template.deposit_amount || '';
+    row.querySelector('input[name="withdrawal_amount"]').value = template.withdrawal_amount || '';
+
+    // 残高の更新
+    updateBalance(row);
+}
+
+// 新しい行を追加する関数
+function addRow(initialData = null) {
+    const tableBody = document.querySelector('#input-transactions-tbody');
+    const newRow = tableBody.insertRow();
+    const rowIndex = tableBody.rows.length - 1; // 0から始まるインデックス
+
+newRow.innerHTML = `
+				        <td><input type="date" name="transaction_date" class="form-control" value="${new Date().toISOString().substring(0, 10)}" required></td>
+					        <td><input type="text" name="template_display" class="form-control template-select custom-select-trigger" id="template-select-${rowIndex}" readonly data-target-type="template" data-row-index="${rowIndex}" placeholder="テンプレートを選択"><input type="hidden" name="template_id"></td>
+					        <td><input type="text" name="account_item_display" class="form-control account-select custom-select-trigger" id="account-select-${rowIndex}" required readonly data-target-type="account_item" data-row-index="${rowIndex}" placeholder="勘定科目を選択"><input type="hidden" name="account_item_id"></td>
+					        <td><input type="text" name="tax_category_display" class="form-control tax-category-select custom-select-trigger" id="tax-category-select-${rowIndex}" readonly data-target-type="tax_category" data-row-index="${rowIndex}" placeholder="税区分を選択"><input type="hidden" name="tax_category_id"></td>
+					        <td class="unified-tag-cell"><input type="text" name="unified_tags_display" class="form-control unified-tags-select custom-select-trigger" id="unified-tags-select-${rowIndex}" readonly data-target-type="unified_tags" data-row-index="${rowIndex}" placeholder="タグを選択"><input type="hidden" name="unified_tags_data"></td>
+					        <td class="detail-tag-cell" style="display: none;"><input type="text" name="counterparty_display" class="form-control counterparty-select custom-select-trigger" id="counterparty-select-${rowIndex}" readonly data-target-type="counterparty" data-row-index="${rowIndex}" placeholder="取引先を選択"><input type="hidden" name="counterparty_id"></td>
+					        <td class="detail-tag-cell" style="display: none;"><input type="text" name="item_display" class="form-control item-select custom-select-trigger" id="item-select-${rowIndex}" readonly data-target-type="item" data-row-index="${rowIndex}" placeholder="品目を選択"><input type="hidden" name="item_id"></td>
+					        <td class="detail-tag-cell" style="display: none;"><input type="text" name="department_display" class="form-control department-select custom-select-trigger" id="department-select-${rowIndex}" readonly data-target-type="department" data-row-index="${rowIndex}" placeholder="部門を選択"><input type="hidden" name="department_id"></td>
+					        <td class="detail-tag-cell" style="display: none;"><input type="text" name="project_tag_display" class="form-control project-tag-select custom-select-trigger" id="project-tag-select-${rowIndex}" readonly data-target-type="project_tag" data-row-index="${rowIndex}" placeholder="案件タグを選択"><input type="hidden" name="project_tag_id"></td>
+					        <td class="detail-tag-cell" style="display: none;"><input type="text" name="memo_tag_display" class="form-control memo-tag-select custom-select-trigger" id="memo-tag-select-${rowIndex}" readonly data-target-type="memo_tag" data-row-index="${rowIndex}" placeholder="メモタグを選択"><input type="hidden" name="memo_tag_id"></td>
+			        <td><input type="text" name="remarks" class="form-control remarks-input"></td>
+			        <td><input type="number" name="deposit_amount" class="form-control" min="0" placeholder="0"></td>
+			        <td><input type="number" name="withdrawal_amount" class="form-control" min="0" placeholder="0"></td>
+			        <td><input type="number" name="balance" class="form-control" min="0" readonly placeholder="0"></td>
+			        <td><button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">削除</button></td>
+			    `;
+
+		    // テンプレート選択時のイベントリスナーを追加 (カスタム選択後の処理)
+		    const templateInput = newRow.querySelector('input[name="template_display"]');
+		    templateInput.addEventListener('change', function() {
+		        const templateId = newRow.querySelector('input[name="template_id"]').value;
+		        applyTemplate(rowIndex, templateId);
+		    });
+
+		    // カスタムUIのイベントリスナー設定
+		    const customSelectTriggers = newRow.querySelectorAll('.custom-select-trigger');
+		    customSelectTriggers.forEach(trigger => {
+		        const targetType = trigger.getAttribute('data-target-type');
+		        let data = [];
+			        switch(targetType) {
+			            case 'template': data = allTemplates; break; // テンプレートを追加
+			            case 'tax_category': data = allTaxCategories; break; // 税区分を追加
+			            case 'account_item': data = allAccountItems; break;
+			            case 'counterparty': data = allCounterparties; break;
+			            case 'item': data = allItems; break;
+			            case 'department': data = allDepartments; break;
+			            case 'project_tag': data = allProjectTags; break;
+			            case 'memo_tag': data = allMemoTags; break;
+            case 'unified_tags': 
+                // 統合タグは特別な処理が必要
+                // Use currentTarget instead of target so that the correct input element is passed
+                trigger.addEventListener('click', (e) => showUnifiedTagsSelect(e.currentTarget));
+                // フォーカス時に自動的にモーダルを開く
+                trigger.addEventListener('focus', (e) => showUnifiedTagsSelect(e.currentTarget));
+                return; // 通常のイベントリスナーは追加しない
+			        }
+			        trigger.addEventListener('click', (e) => showCustomSelect(e.target, data));
+        // フォーカス時に自動的にモーダルを開く
+        trigger.addEventListener('focus', (e) => showCustomSelect(e.target, data));
+		    });
+
+	    // 入金・出金の入力イベントリスナーを追加
+	    const depositAmountInput = newRow.querySelector('input[name="deposit_amount"]');
+	    const withdrawalAmountInput = newRow.querySelector('input[name="withdrawal_amount"]');
+	    const balanceInput = newRow.querySelector('input[name="balance"]');
+	    
+	    depositAmountInput.addEventListener('input', function() {
+	        updateBalance(newRow);
+	    });
+	    
+	    withdrawalAmountInput.addEventListener('input', function() {
+	        updateBalance(newRow);
+	    });
+
+	    // freee風の即時登録機能: 最終金額フィールドでEnterまたはTabを押すと登録
+	    // freeeの挙動: 最終金額欄以外でEnter -> 次のフィールドへ移動
+	    // 最終金額欄でEnter/Tab -> 登録 -> 新しい行の最初の要素にフォーカス
+	    
+    // すべての入力フィールドにイベントリスナーを追加
+    newRow.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Enterキーによるフォーム送信をキャンセル
+                
+                // 現在のフィールドのインデックスを取得
+                const currentInput = event.target;
+                const allInputs = Array.from(newRow.querySelectorAll('input:not([type=hidden]), select'));
+                const currentIndex = allInputs.indexOf(currentInput);
+                
+                // カスタム選択フィールド（readonly属性を持つフィールド）の場合、モーダルを開く
+                if (currentInput.hasAttribute('readonly') && currentInput.classList.contains('custom-select-trigger')) {
+                    currentInput.click(); // クリックイベントを発生させてモーダルを開く
+                    return;
+                }
+                
+                // 最終金額フィールドでの処理
+                if (currentInput.name === 'withdrawal_amount') {
+                    // 支出欄でEnterキーを押した場合は登録処理
+                    submitBatch();
+                } else if (currentInput.name === 'deposit_amount') {
+                    // 収入欄でEnterキーを押した場合は支出欄にフォーカスを移動
+                    const nextIndex = currentIndex + 1;
+                    if (nextIndex < allInputs.length) {
+                        allInputs[nextIndex].focus();
+                    }
+                } else {
+                    // 空欄の場合、前回の値をコピー（金額以外）
+                    if (!currentInput.value) {
+                        // 金額フィールドはコピー対象から除外
+                        if (currentInput.name !== 'deposit_amount' && currentInput.name !== 'withdrawal_amount') {
+            const tableBody = document.querySelector('#input-transactions-tbody');
+                            const allRows = Array.from(tableBody.querySelectorAll('tr'));
+                            const currentRowIndex = allRows.indexOf(newRow);
+                            
+                            // 前の行が存在する場合
+                            if (currentRowIndex > 0) {
+                                const prevRow = allRows[currentRowIndex - 1];
+                                const prevInput = prevRow.querySelector(`input[name="${currentInput.name}"]`);
+                                
+                                if (prevInput && prevInput.value) {
+                                    currentInput.value = prevInput.value;
+                                    
+                                    // 対応するhiddenフィールドもコピー
+                                    if (currentInput.name.endsWith('_display')) {
+                                        const fieldName = currentInput.name.replace('_display', '_id');
+                                        const currentHidden = newRow.querySelector(`input[name="${fieldName}"]`);
+                                        const prevHidden = prevRow.querySelector(`input[name="${fieldName}"]`);
+                                        if (currentHidden && prevHidden) {
+                                            currentHidden.value = prevHidden.value;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // それ以外のフィールドであれば次のフィールドへ移動
+                    const nextIndex = currentIndex + 1;
+                    if (nextIndex < allInputs.length) {
+                        allInputs[nextIndex].focus();
+                    }
+                }
+            }
+        });
+    });
+	    
+	    // 最終金額フィールドでのTabキーによる登録処理（freeeの挙動に合わせる）
+	    withdrawalAmountInput.addEventListener('keydown', function(event) {
+	        if (event.key === 'Tab') {
+	            event.preventDefault();
+	            submitBatch();
+	        }
+	    });
+	    
+		    depositAmountInput.addEventListener('keydown', function(event) {
+		        if (event.key === 'Tab') {
+		            event.preventDefault();
+		            submitBatch();
+		        }
+		    });
+		    
+		    // 初期データがあれば設定
+		    if (initialData) {
+		        if (initialData.transaction_date) newRow.querySelector('input[name="transaction_date"]').value = initialData.transaction_date;
+		        if (initialData.account_item_display) newRow.querySelector('input[name="account_item_display"]').value = initialData.account_item_display;
+		        if (initialData.account_item_id) newRow.querySelector('input[name="account_item_id"]').value = initialData.account_item_id;
+		        if (initialData.tax_category_display) newRow.querySelector('input[name="tax_category_display"]').value = initialData.tax_category_display;
+		        if (initialData.tax_category_id) newRow.querySelector('input[name="tax_category_id"]').value = initialData.tax_category_id;
+		        if (initialData.counterparty_display) newRow.querySelector('input[name="counterparty_display"]').value = initialData.counterparty_display;
+		        if (initialData.counterparty_id) newRow.querySelector('input[name="counterparty_id"]').value = initialData.counterparty_id;
+		        if (initialData.item_display) newRow.querySelector('input[name="item_display"]').value = initialData.item_display;
+		        if (initialData.item_id) newRow.querySelector('input[name="item_id"]').value = initialData.item_id;
+		        if (initialData.department_display) newRow.querySelector('input[name="department_display"]').value = initialData.department_display;
+		        if (initialData.department_id) newRow.querySelector('input[name="department_id"]').value = initialData.department_id;
+		        if (initialData.project_tag_display) newRow.querySelector('input[name="project_tag_display"]').value = initialData.project_tag_display;
+		        if (initialData.project_tag_id) newRow.querySelector('input[name="project_tag_id"]').value = initialData.project_tag_id;
+		        if (initialData.memo_tag_display) newRow.querySelector('input[name="memo_tag_display"]').value = initialData.memo_tag_display;
+		        if (initialData.memo_tag_id) newRow.querySelector('input[name="memo_tag_id"]').value = initialData.memo_tag_id;
+        if (initialData.remarks) newRow.querySelector('input[name="remarks"]').value = initialData.remarks;
+    }
+    
+    // 現在のタグモードを反映
+    const savedTagMode = localStorage.getItem('tagInputMode') || 'unified';
+    const unifiedCells = newRow.querySelectorAll('.unified-tag-cell');
+    const detailCells = newRow.querySelectorAll('.detail-tag-cell');
+    
+    if (savedTagMode === 'detail') {
+        unifiedCells.forEach(cell => cell.style.display = 'none');
+        detailCells.forEach(cell => cell.style.display = '');
+    } else {
+        unifiedCells.forEach(cell => cell.style.display = '');
+        detailCells.forEach(cell => cell.style.display = 'none');
+    }
+}
+
+// 行を削除する関数
+function deleteRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+
+// 残高を更新する関数
+function updateBalance(row) {
+    const deposit = parseFloat(row.querySelector('input[name="deposit_amount"]').value) || 0;
+    const withdrawal = parseFloat(row.querySelector('input[name="withdrawal_amount"]').value) || 0;
+    const balanceInput = row.querySelector('input[name="balance"]');
+    
+    // どちらか一方のみ入力可能にするロジック (freeeの挙動を模倣)
+    if (deposit > 0 && withdrawal > 0) {
+        // 最後に変更された方を優先するロジックは複雑なので、ここでは単純に片方をクリア
+        // ユーザーが両方入力した場合は、depositを優先しwithdrawalをクリアする
+        row.querySelector('input[name="withdrawal_amount"]').value = 0;
+        withdrawal = 0;
+    }
+
+    // 簡易的な残高計算 (ここでは収入-支出としておく)
+    const balance = deposit - withdrawal;
+    balanceInput.value = balance;
+}
+
+// 一括登録を処理する関数
+async function submitBatch() {
+    const tableBody = document.querySelector('#input-transactions-tbody');
+    // 入力行のみを取得（data-id属性を持たない行）
+    const rows = Array.from(tableBody.querySelectorAll('tr')).filter(row => !row.hasAttribute('data-id'));
+    const transactions = [];
+    const accountId = document.getElementById('account-select').value;
+
+    if (!accountId) {
+        alert('口座が選択されていません。');
+        return;
+    }
+    let isValid = true;
+
+    console.log('入力行数:', rows.length);
+
+    rows.forEach((row, index) => {
+        console.log(`行 ${index + 1} の処理を開始...`);
+        // 隠しフィールドも含むすべてのinputとselectを取得
+        const inputs = row.querySelectorAll('input, select');
+        const transaction = {};
+        let rowValid = true;
+
+        inputs.forEach(input => {
+            if (input.name) {
+                let value;
+                
+			        if (input.tagName === 'SELECT') {
+			                    // SELECT要素はTomSelectの初期化を削除したため、通常の処理に移行
+			                    value = input.value;
+			                    transaction[input.name] = value;
+			                } else if (input.name === 'unified_tags_data') {
+                    // 統合タグデータを各タグIDに分解
+                    if (input.value) {
+                        try {
+                            const unifiedTags = JSON.parse(input.value);
+                            unifiedTags.forEach(tag => {
+                                if (tag.category === 'counterparty') transaction['counterparty_id'] = tag.id;
+                                else if (tag.category === 'item') transaction['item_id'] = tag.id;
+                                else if (tag.category === 'department') transaction['department_id'] = tag.id;
+                                else if (tag.category === 'project_tag') transaction['project_tag_id'] = tag.id;
+                                else if (tag.category === 'memo_tag') transaction['memo_tag_id'] = tag.id;
+                            });
+                        } catch (e) {
+                            console.error('統合タグデータのパースに失敗:', e);
+                        }
+                    }
+                } else if (input.type === 'hidden' && input.name.endsWith('_id')) {
+                    value = input.value;
+                    transaction[input.name] = value;
+                } else if (input.name.endsWith('_display')) {
+                    // 表示用のフィールドは送信データに含めない
+                } else {
+                    value = input.value;
+                    transaction[input.name] = value;
+                }
+                
+                if (value) {
+                    value = value.toString().trim();
+                }
+                
+                // 必須フィールドのチェック
+                // 表示用inputのrequired属性は無視し、hidden inputのrequired属性をチェックする
+                // ただし、transaction_dateは表示用inputにrequiredがあるため、特別にチェック
+                if (input.name === 'transaction_date' && !value) {
+                    rowValid = false;
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                    console.error(`  必須フィールド (${input.name}) が空です。`);
+                } else if (input.name === 'account_item_id' && !value) {
+                    rowValid = false;
+                    isValid = false;
+                    // 対応する表示用フィールドに赤枠を付ける
+                    const displayInput = row.querySelector('input[name="account_item_display"]');
+                    if (displayInput) {
+                        displayInput.classList.add('is-invalid');
+                    }
+                    console.error(`  必須フィールド (${input.name}) が空です。`);
+                } else if ((input.name === 'deposit_amount' || input.name === 'withdrawal_amount') && !value) {
+                    // 金額はどちらか一方に入力されていればOK
+                    const deposit = parseFloat(row.querySelector('input[name="deposit_amount"]').value) || 0;
+                    const withdrawal = parseFloat(row.querySelector('input[name="withdrawal_amount"]').value) || 0;
+                    
+                    if (deposit === 0 && withdrawal === 0) {
+                        rowValid = false;
+                        isValid = false;
+                        row.querySelector('input[name="deposit_amount"]').classList.add('is-invalid');
+                        row.querySelector('input[name="withdrawal_amount"]').classList.add('is-invalid');
+                        console.error(`  必須フィールド (deposit_amount/withdrawal_amount) が空です。`);
+                    } else {
+                        row.querySelector('input[name="deposit_amount"]').classList.remove('is-invalid');
+                        row.querySelector('input[name="withdrawal_amount"]').classList.remove('is-invalid');
+                    }
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            }
+        });
+
+        if (rowValid) {
+            // 最終的なトランザクションオブジェクトに口座IDを追加
+            transaction.account_id = accountId;
+            transactions.push(transaction);
+            console.log(`行 ${index + 1} の処理が完了:`, transaction);
+        }
+    });
+
+    if (!isValid) {
+        alert('必須項目が入力されていません。赤枠の箇所を確認してください。');
+        return;
+    }
+
+    if (transactions.length === 0) {
+        alert('登録する仕訳がありません。');
+        return;
+    }
+
+    console.log('送信データ:', transactions);
+
+    try {
+        const response = await fetch('{{ url_for("batch_create_cash_books") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ transactions: transactions })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // 最後の行のデータを保存（金額以外）
+            const lastRow = rows[rows.length - 1];
+            const lastRowData = {
+                transaction_date: lastRow.querySelector('input[name="transaction_date"]')?.value || '',
+                account_item_display: lastRow.querySelector('input[name="account_item_display"]')?.value || '',
+                account_item_id: lastRow.querySelector('input[name="account_item_id"]')?.value || '',
+                tax_category_display: lastRow.querySelector('input[name="tax_category_display"]')?.value || '',
+                tax_category_id: lastRow.querySelector('input[name="tax_category_id"]')?.value || '',
+                counterparty_display: lastRow.querySelector('input[name="counterparty_display"]')?.value || '',
+                counterparty_id: lastRow.querySelector('input[name="counterparty_id"]')?.value || '',
+                item_display: lastRow.querySelector('input[name="item_display"]')?.value || '',
+                item_id: lastRow.querySelector('input[name="item_id"]')?.value || '',
+                department_display: lastRow.querySelector('input[name="department_display"]')?.value || '',
+                department_id: lastRow.querySelector('input[name="department_id"]')?.value || '',
+                project_tag_display: lastRow.querySelector('input[name="project_tag_display"]')?.value || '',
+                project_tag_id: lastRow.querySelector('input[name="project_tag_id"]')?.value || '',
+                memo_tag_display: lastRow.querySelector('input[name="memo_tag_display"]')?.value || '',
+                memo_tag_id: lastRow.querySelector('input[name="memo_tag_id"]')?.value || '',
+                remarks: lastRow.querySelector('input[name="remarks"]')?.value || ''
+            };
+            
+            // 口座選択を保存
+            const selectedAccountId = document.getElementById('account-select').value;
+            
+            // 入力行をクリアし、新しい行を前回データで追加
+            const inputTableBody = document.querySelector('#input-transactions-tbody');
+            inputTableBody.innerHTML = '';
+            addRow(lastRowData);
+            
+            // 口座選択を復元
+            document.getElementById('account-select').value = selectedAccountId;
+            
+            // 最初のフィールド（取引日）にフォーカス
+            const newRow = inputTableBody.querySelector('tr');
+            if (newRow) {
+                newRow.querySelector('input[name="transaction_date"]')?.focus();
+            }
+            
+            // 登録済み仕訳テーブルを更新
+            await updateRegisteredTransactions();
+            
+            // 登録成功メッセージを表示（ページリロードはしない）
+            // alert('仕訳を登録しました。');
+        } else {
+            alert('登録中にエラーが発生しました: ' + result.message);
+            console.error('APIエラー:', result);
+        }
+    } catch (error) {
+        alert('ネットワークエラーにより登録に失敗しました。');
+        console.error('ネットワークエラー:', error);
+    }
+}
+
+// 登録済み仕訳テーブルを更新する関数
+async function updateRegisteredTransactions() {
+    try {
+        // 現在の口座IDを取得
+        const accountId = document.getElementById('account-select').value;
+        if (!accountId) {
+            return; // 口座が選択されていない場合は更新しない
+        }
+        
+        // 最新の登録済み仕訳を取得
+        const response = await fetch(`/api/cash-books/list?account_id=${accountId}&limit=50`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const cashBooks = result.data;
+            const tbody = document.querySelector('#registered-transactions-tbody');
+            
+            if (!tbody) {
+                console.error('登録済み仕訳テーブルが見つかりませんでした。');
+                return;
+            }
+            
+            // テーブルをクリア
+            tbody.innerHTML = '';
+            
+            // 新しいデータを追加（逆順にして最新が一番下に来るように）
+            cashBooks.reverse().forEach(cb => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', cb.id);
+                // 保存用IDが行に付与されていないと編集時にIDが取得できずエラーになるため、必ず付与
+                // 勘定科目IDと税区分IDはnullの可能性もあるので空文字列をデフォルトにしておく
+                row.setAttribute('data-account-item-id', cb.account_item_id || '');
+                row.setAttribute('data-tax-category-id', cb.tax_category_id || '');
+                // 統合タグモード用のタグ表示を生成
+                const tags = [];
+                if (cb.counterparty) tags.push(cb.counterparty + ' (取引先)');
+                if (cb.item_name) tags.push(cb.item_name + ' (品目)');
+                if (cb.department) tags.push(cb.department + ' (部門)');
+                if (cb.project_tag) tags.push(cb.project_tag + ' (案件)');
+                if (cb.memo_tag) tags.push(cb.memo_tag + ' (メモ)');
+                const unifiedTags = tags.length > 0 ? tags.join(', ') : '-';
+                
+                row.innerHTML = `
+                    <td>${cb.transaction_date}</td>
+                    <td>-</td>
+                    <td>${cb.account_item_name || ''}</td>
+                    <td>${cb.tax_category || ''}</td>
+                    <td class="unified-tag-cell">${unifiedTags}</td>
+                    <td class="detail-tag-cell" style="display: none;">${cb.counterparty || '-'}</td>
+                    <td class="detail-tag-cell" style="display: none;">${cb.item_name || '-'}</td>
+                    <td class="detail-tag-cell" style="display: none;">${cb.department || '-'}</td>
+                    <td class="detail-tag-cell" style="display: none;">${cb.project_tag || '-'}</td>
+                    <td class="detail-tag-cell" style="display: none;">${cb.memo_tag || '-'}</td>
+                    <td>${cb.remarks || '-'}</td>
+                    <td style="text-align: right;">${cb.deposit_amount ? cb.deposit_amount.toLocaleString() : '-'}</td>
+                    <td style="text-align: right;">${cb.withdrawal_amount ? cb.withdrawal_amount.toLocaleString() : '-'}</td>
+                    <td style="text-align: right;">${cb.balance ? cb.balance.toLocaleString() : '-'}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="editCashBook(${cb.id})">編集</button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashBook(${cb.id})">削除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // 現在のタグモードを反映
+            const savedTagMode = localStorage.getItem('tagInputMode') || 'unified';
+            const unifiedCells = tbody.querySelectorAll('.unified-tag-cell');
+            const detailCells = tbody.querySelectorAll('.detail-tag-cell');
+            
+            if (savedTagMode === 'detail') {
+                unifiedCells.forEach(cell => cell.style.display = 'none');
+                detailCells.forEach(cell => cell.style.display = '');
+            } else {
+                unifiedCells.forEach(cell => cell.style.display = '');
+                detailCells.forEach(cell => cell.style.display = 'none');
+            }
+            
+            // スクロール位置を一番下に設定（DOMが完全にレンダリングされるまで待つ）
+            setTimeout(() => {
+                const scrollContainer = document.querySelector('.table-scroll-container');
+                if (scrollContainer) {
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                }
+            }, 100);
+        }
+    } catch (error) {
+        console.error('登録済み仕訳の更新に失敗しました:', error);
+    }
+}
+
+// =================================================================
+// カスタム選択モーダル関連のJavaScript
+// =================================================================
+const modal = document.getElementById('customSelectModal');
+const closeBtn = document.querySelector('.custom-select-close');
+const searchInput = document.getElementById('customSelectSearch');
+const grid = document.getElementById('customSelectGrid');
+const title = document.getElementById('customSelectTitle');
+let currentTargetInput = null;
+let currentData = [];
+
+// 検索フィールドでEnterキーを押した時の処理関数
+function handleModalSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // モーダルを閉じる
+        modal.style.display = 'none';
+        
+        // 次のフィールドにフォーカスを移動
+        if (currentTargetInput) {
+            const allInputs = Array.from(currentTargetInput.closest('tr').querySelectorAll('input:not([type=hidden]), select'));
+            const currentIndex = allInputs.indexOf(currentTargetInput);
+            
+            if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
+                // 次の表示されているフィールドを探す
+                let nextIndex = currentIndex + 1;
+                while (nextIndex < allInputs.length) {
+                    const nextInput = allInputs[nextIndex];
+                    // 表示されているフィールドかどうかをチェック
+                    const style = window.getComputedStyle(nextInput);
+                    const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && nextInput.offsetParent !== null;
+                    
+                    if (isVisible) {
+                        nextInput.focus();
+                        break;
+                    }
+                    nextIndex++;
+                }
+            }
+        }
+    }
+}
+
+// モーダルを閉じる
+closeBtn.onclick = function() {
+    modal.style.display = 'none';
+}
+
+// モーダル外をクリックで閉じる
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// モーダル内でEnterキーを押した時の処理（バックアップ）
+modal.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // モーダルを閉じる
+        modal.style.display = 'none';
+        
+        // 次のフィールドにフォーカスを移動
+        if (currentTargetInput) {
+            const allInputs = Array.from(currentTargetInput.closest('tr').querySelectorAll('input:not([type=hidden]), select'));
+            const currentIndex = allInputs.indexOf(currentTargetInput);
+            
+            if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
+                // 次の表示されているフィールドを探す
+                let nextIndex = currentIndex + 1;
+                while (nextIndex < allInputs.length) {
+                    const nextInput = allInputs[nextIndex];
+                    // 表示されているフィールドかどうかをチェック
+                    const style = window.getComputedStyle(nextInput);
+                    const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && nextInput.offsetParent !== null;
+                    
+                    if (isVisible) {
+                        nextInput.focus();
+                        break;
+                    }
+                    nextIndex++;
+                }
+            }
+        }
+    }
+}, true); // キャプチャフェーズで実行
+
+// 候補を表示する関数
+function showCustomSelect(inputElement, data) {
+    currentTargetInput = inputElement;
+    currentData = data || [];
+    
+    const targetType = inputElement.getAttribute('data-target-type');
+    
+    // タイトル設定
+    let displayTitle = '';
+    switch(targetType) {
+        case 'template': displayTitle = 'テンプレート'; break;
+        case 'account_item': displayTitle = '勘定科目'; break;
+        case 'tax_category': displayTitle = '税区分'; break;
+        case 'counterparty': displayTitle = '取引先'; break;
+        case 'item': displayTitle = '品目'; break;
+        case 'department': displayTitle = '部門'; break;
+        case 'project_tag': displayTitle = '案件タグ'; break;
+        case 'memo_tag': displayTitle = 'メモタグ'; break;
+        default: displayTitle = '候補を選択';
+    }
+    title.textContent = displayTitle;
+    
+    // 候補の描画
+    renderCandidates(currentData, targetType);
+    
+    // 検索フィールドをクリアしてフォーカス
+    searchInput.value = '';
+    
+    // モーダル表示
+    modal.style.display = 'block';
+    searchInput.focus();
+}
+
+// 候補を描画する関数
+function renderCandidates(data, targetType) {
+    grid.innerHTML = '';
+    
+    let labelField;
+    if (targetType === 'account_item') {
+        labelField = 'account_name';
+    } else if (targetType === 'template') {
+        labelField = 'display_name'; // テンプレートはdisplay_nameを使用
+    } else if (targetType === 'tax_category') {
+        labelField = 'name'; // 税区分はnameを使用
+    } else if (targetType === 'counterparty' || targetType === 'item' || targetType === 'department' || targetType === 'project_tag' || targetType === 'memo_tag') {
+        labelField = 'name'; // 取引先、品目、部門、案件タグ、メモタグはnameを使用
+    } else {
+        labelField = 'tag_name'; // その他のタグはtag_nameを使用
+    }
+    
+    data.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'custom-select-item';
+        itemDiv.textContent = item[labelField];
+        itemDiv.setAttribute('data-id', item.id);
+        itemDiv.setAttribute('data-name', item[labelField]);
+        itemDiv.onclick = () => selectCandidate(item.id, item[labelField], targetType);
+        grid.appendChild(itemDiv);
+    });
+    
+    // 検索機能を追加
+    searchInput.value = '';
+    searchInput.oninput = function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = grid.querySelectorAll('.custom-select-item');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    };
+}
+
+// 候補を選択する関数
+function selectCandidate(id, name, targetType) {
+    if (currentTargetInput) {
+        // 表示用のinputに名前を設定
+        currentTargetInput.value = name;
+        
+        // 隠しフィールドにIDを設定
+        const hiddenInputName = targetType + '_id';
+        const hiddenInput = currentTargetInput.closest('td').querySelector(`input[name="${hiddenInputName}"]`);
+        if (hiddenInput) {
+            hiddenInput.value = id;
+        }
+        
+        // テンプレートの場合は、他のフィールドも更新
+        if (targetType === 'template') {
+            const rowIndex = currentTargetInput.getAttribute('data-row-index');
+            applyTemplate(rowIndex, id);
+        }
+        
+        // 変更イベントをトリガーして、バリデーションや関連ロジックを走らせる
+        currentTargetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // モーダルを閉じる
+        modal.style.display = 'none';
+        
+        // 次のフィールドにフォーカスを移動
+        const allInputs = Array.from(currentTargetInput.closest('tr').querySelectorAll('input:not([type=hidden]), select'));
+        const currentIndex = allInputs.indexOf(currentTargetInput);
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < allInputs.length) {
+            allInputs[nextIndex].focus();
+        }
+    }
+}
+
+// 初期化処理
+document.addEventListener('DOMContentLoaded', async () => {
+    // 必要なデータをすべて取得
+    await Promise.all([
+        fetchAccountItems(),
+        fetchTaxCategories(),
+        fetchTemplates(),
+        fetchAccounts(),
+        fetchTagMasters()
+    ]);
+    
+    // 最初の行を追加
+    addRow();
+    
+    // 口座選択のイベントリスナー
+    const accountTypeSelect = document.getElementById('account-type-select');
+    const accountSelect = document.getElementById('account-select');
+    
+    // 口座タイプが変更されたときの処理
+    accountTypeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        
+        // 選択肢をクリア
+        accountSelect.innerHTML = '<option value="">選択してください</option>';
+        
+        if (selectedType) {
+            // 選択されたタイプに一致する口座をフィルタリング
+            // 口座タイプが「口座」の場合、account_typeが「普通預金」または「現金」のものをフィルタリング
+            let filteredAccounts = [];
+            if (selectedType === '口座') {
+                filteredAccounts = allAccounts.filter(account => account.account_type === '普通預金' || account.account_type === '現金');
+            } else {
+                filteredAccounts = allAccounts.filter(account => account.account_type === selectedType);
+            }
+            
+            // 選択肢を追加
+            filteredAccounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.display_name;
+                accountSelect.appendChild(option);
+            });
+        }
+    });
+    
+    // ページロード時に口座タイプが「口座」に設定されている場合は、口座リストをロード
+    if (accountTypeSelect.value === '口座') {
+        accountTypeSelect.dispatchEvent(new Event('change'));
+    }
+    
+    // タグモードの初期化を実行
+    initializeTagMode();
+    
+    // 登録済みデータのスクロール位置を一番下に設定（DOMが完全にレンダリングされるまで待つ）
+    setTimeout(() => {
+        const scrollContainer = document.querySelector('.table-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+    }, 100);
+    
+    // 横スクロールを同期させる
+    syncHorizontalScroll();
+});
+
+// 横スクロールを同期させる関数
+function syncHorizontalScroll() {
+    const headerContainer = document.querySelector('#transaction-table-header').closest('.table-container');
+    const bodyContainer = document.querySelector('.table-scroll-container');
+    const inputContainer = document.querySelector('#transaction-table-input-container');
+    
+    let isScrolling = false;
+    
+    function syncScroll(source, targets) {
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        const scrollLeft = source.scrollLeft;
+        targets.forEach(target => {
+            if (target && target !== source) {
+                target.scrollLeft = scrollLeft;
+            }
+        });
+        
+        setTimeout(() => {
+            isScrolling = false;
+        }, 10);
+    }
+    
+    if (headerContainer) {
+        headerContainer.addEventListener('scroll', () => {
+            syncScroll(headerContainer, [bodyContainer, inputContainer]);
+        });
+    }
+    
+    if (bodyContainer) {
+        bodyContainer.addEventListener('scroll', () => {
+            syncScroll(bodyContainer, [headerContainer, inputContainer]);
+        });
+    }
+    
+    if (inputContainer) {
+        inputContainer.addEventListener('scroll', () => {
+            syncScroll(inputContainer, [headerContainer, bodyContainer]);
+        });
+    }
+}
+
+// タグモードを初期化する関数
+function initializeTagMode() {
+    const savedTagMode = localStorage.getItem('tagInputMode') || 'unified';
+    
+    const unifiedHeaders = document.querySelectorAll('.unified-tag-header');
+    const detailHeaders = document.querySelectorAll('.detail-tag-header');
+    const unifiedCells = document.querySelectorAll('.unified-tag-cell');
+    const detailCells = document.querySelectorAll('.detail-tag-cell');
+    const unifiedCols = document.querySelectorAll('.unified-tag-col');
+    const detailCols = document.querySelectorAll('.detail-tag-col');
+    const toggleBtn = document.getElementById('toggle-tag-mode-btn');
+    
+    if (savedTagMode === 'unified') {
+        // 統合モード：統合タグを表示、詳細タグを非表示
+        unifiedHeaders.forEach(el => el.style.display = 'table-cell');
+        detailHeaders.forEach(el => el.style.display = 'none');
+        unifiedCells.forEach(el => el.style.display = 'table-cell');
+        detailCells.forEach(el => el.style.display = 'none');
+        unifiedCols.forEach(el => el.style.display = 'table-column');
+        detailCols.forEach(el => el.style.display = 'none');
+        toggleBtn.textContent = '詳細モードに切替';
+    } else {
+        // 詳細モード：詳細タグを表示、統合タグを非表示
+        unifiedHeaders.forEach(el => el.style.display = 'none');
+        detailHeaders.forEach(el => el.style.display = 'table-cell');
+        unifiedCells.forEach(el => el.style.display = 'none');
+        detailCells.forEach(el => el.style.display = 'table-cell');
+        unifiedCols.forEach(el => el.style.display = 'none');
+        detailCols.forEach(el => el.style.display = 'table-column');
+        toggleBtn.textContent = '統合モードに切替';
+    }
+}
+
+// タグ入力モードを切り替える関数
+function toggleTagMode() {
+    const currentMode = localStorage.getItem('tagInputMode') || 'unified';
+    const newMode = currentMode === 'unified' ? 'detail' : 'unified';
+    
+    // localStorageに保存
+    localStorage.setItem('tagInputMode', newMode);
+    
+    // UIを更新
+    const unifiedHeaders = document.querySelectorAll('.unified-tag-header');
+    const detailHeaders = document.querySelectorAll('.detail-tag-header');
+    const unifiedCells = document.querySelectorAll('.unified-tag-cell');
+    const detailCells = document.querySelectorAll('.detail-tag-cell');
+    const unifiedCols = document.querySelectorAll('.unified-tag-col');
+    const detailCols = document.querySelectorAll('.detail-tag-col');
+    const toggleBtn = document.getElementById('toggle-tag-mode-btn');
+    
+    if (newMode === 'unified') {
+        // 詳細モード → 統合モード：詳細フィールドのタグを統合フィールドに同期
+        syncDetailToUnified();
+        
+        // 統合モード：統合タグを表示、詳細タグを非表示
+        unifiedHeaders.forEach(el => el.style.display = 'table-cell');
+        detailHeaders.forEach(el => el.style.display = 'none');
+        unifiedCells.forEach(el => el.style.display = 'table-cell');
+        detailCells.forEach(el => el.style.display = 'none');
+        unifiedCols.forEach(el => el.style.display = 'table-column');
+        detailCols.forEach(el => el.style.display = 'none');
+        toggleBtn.textContent = '詳細モードに切替';
+    } else {
+        // 統合モード → 詳細モード：統合フィールドのタグを詳細フィールドに同期
+        syncUnifiedToDetail();
+        
+        // 詳細モード：詳細タグを表示、統合タグを非表示
+        unifiedHeaders.forEach(el => el.style.display = 'none');
+        detailHeaders.forEach(el => el.style.display = 'table-cell');
+        unifiedCells.forEach(el => el.style.display = 'none');
+        detailCells.forEach(el => el.style.display = 'table-cell');
+        unifiedCols.forEach(el => el.style.display = 'none');
+        detailCols.forEach(el => el.style.display = 'table-column');
+        toggleBtn.textContent = '統合モードに切替';
+    }
+}
+
+// 統合タグ選択モーダルを表示する関数
+function showUnifiedTagsSelect(triggerElement) {
+    // Store the element that triggered the unified tags modal
+    // This allows Enter handling in the modal to focus on the next visible input in the same row
+    currentTargetInput = triggerElement;
+    const modal = document.getElementById('customSelectModal');
+    const title = document.getElementById('customSelectTitle');
+    const grid = document.getElementById('customSelectGrid');
+    const searchInput = document.getElementById('customSelectSearch');
+    
+    title.textContent = 'タグを選択（各種類1つずつ）';
+    
+    // 現在選択されているタグを取得
+    const row = triggerElement.closest('tr');
+    const unifiedTagsDataInput = row.querySelector('input[name="unified_tags_data"]');
+    let selectedTags = [];
+    try {
+        selectedTags = unifiedTagsDataInput.value ? JSON.parse(unifiedTagsDataInput.value) : [];
+    } catch (e) {
+        selectedTags = [];
+    }
+    
+    // 全タグデータを統合（種類情報付き）
+    const allUnifiedTags = [];
+    
+    if (allCounterparties && allCounterparties.length > 0) {
+        allCounterparties.forEach(tag => {
+            allUnifiedTags.push({ id: tag.id, name: tag.name, type: '取引先', category: 'counterparty' });
+        });
+    }
+    if (allItems && allItems.length > 0) {
+        allItems.forEach(tag => {
+            allUnifiedTags.push({ id: tag.id, name: tag.name, type: '品目', category: 'item' });
+        });
+    }
+    if (allDepartments && allDepartments.length > 0) {
+        allDepartments.forEach(tag => {
+            allUnifiedTags.push({ id: tag.id, name: tag.name, type: '部門', category: 'department' });
+        });
+    }
+    if (allProjectTags && allProjectTags.length > 0) {
+        allProjectTags.forEach(tag => {
+            allUnifiedTags.push({ id: tag.id, name: tag.name, type: '案件', category: 'project_tag' });
+        });
+    }
+    if (allMemoTags && allMemoTags.length > 0) {
+        allMemoTags.forEach(tag => {
+            allUnifiedTags.push({ id: tag.id, name: tag.name, type: 'メモ', category: 'memo_tag' });
+        });
+    }
+    
+    // グリッドをクリア
+    grid.innerHTML = '';
+    
+    // 選択済みタグを上部に表示（バッジ形式）
+    if (selectedTags.length > 0) {
+        const selectedContainer = document.createElement('div');
+        selectedContainer.style.marginBottom = '15px';
+        selectedContainer.style.padding = '10px';
+        selectedContainer.style.backgroundColor = '#f8f9fa';
+        selectedContainer.style.borderRadius = '4px';
+        selectedContainer.innerHTML = '<strong>選択中のタグ:</strong>';
+        const selectedTagsDiv = document.createElement('div');
+        selectedTagsDiv.style.display = 'flex';
+        selectedTagsDiv.style.flexWrap = 'wrap';
+        selectedTagsDiv.style.gap = '8px';
+        selectedTagsDiv.style.marginTop = '8px';
+        
+        selectedTags.forEach(tag => {
+            const tagBadge = document.createElement('span');
+            tagBadge.className = 'badge bg-primary';
+            tagBadge.style.fontSize = '14px';
+            tagBadge.style.padding = '6px 10px';
+            tagBadge.style.cursor = 'pointer';
+            tagBadge.innerHTML = `${tag.name} (${tag.type}) <span style="margin-left: 8px; font-weight: bold;">×</span>`;
+            tagBadge.onclick = () => {
+                removeUnifiedTag(tag.category, triggerElement.id);
+            };
+            selectedTagsDiv.appendChild(tagBadge);
+        });
+        
+        selectedContainer.appendChild(selectedTagsDiv);
+        grid.appendChild(selectedContainer);
+    }
+    
+    // すべてのタグをグリッド形式で表示（勘定科目と同じスタイル）
+    allUnifiedTags.forEach(tag => {
+        const selectedCategories = selectedTags.map(t => t.category);
+        const isSelected = selectedCategories.includes(tag.category);
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'custom-select-item';
+        itemDiv.textContent = `${tag.name} (${tag.type})`;
+        
+        // 既に選択されているタグは視覚的に区別
+        if (isSelected) {
+            itemDiv.style.backgroundColor = '#e7f3ff';
+            itemDiv.style.border = '2px solid #0d6efd';
+            itemDiv.style.fontWeight = 'bold';
+            itemDiv.style.cursor = 'pointer';
+            itemDiv.onclick = () => {
+                removeUnifiedTag(tag.category, triggerElement.id);
+            };
+        } else {
+            itemDiv.onclick = () => {
+                addUnifiedTag(tag, triggerElement.id);
+            };
+        }
+        
+        grid.appendChild(itemDiv);
+    });
+    
+    // 検索機能
+    searchInput.value = '';
+    searchInput.oninput = function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = grid.querySelectorAll('.custom-select-item');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    };
+    
+    // モーダルを表示
+    modal.style.display = 'block';
+    // 統合タグモーダルでも検索ボックスにフォーカスすることで、Enterキーが押された際に
+    // handleModalSearchKeydown が発火し備考欄へ進めるようにする
+    if (searchInput) {
+        searchInput.focus();
+    }
+}
+
+// 統合タグを追加する関数
+function addUnifiedTag(tag, triggerElementId) {
+    const triggerElement = document.getElementById(triggerElementId);
+    const row = triggerElement.closest('tr');
+    const displayInput = row.querySelector('input[name="unified_tags_display"]');
+    const dataInput = row.querySelector('input[name="unified_tags_data"]');
+    
+    let selectedTags = [];
+    try {
+        selectedTags = dataInput.value ? JSON.parse(dataInput.value) : [];
+    } catch (e) {
+        selectedTags = [];
+    }
+    
+    // 同じ種類のタグが既にあれば削除
+    selectedTags = selectedTags.filter(t => t.category !== tag.category);
+    
+    // 新しいタグを追加
+    selectedTags.push(tag);
+    
+    // 表示とデータを更新
+    displayInput.value = selectedTags.map(t => `${t.name} (${t.type})`).join(', ');
+    dataInput.value = JSON.stringify(selectedTags);
+    
+    // モーダルを再表示して選択状態を更新
+    showUnifiedTagsSelect(triggerElement);
+}
+
+// 統合タグを削除する関数
+function removeUnifiedTag(category, triggerElementId) {
+    const triggerElement = document.getElementById(triggerElementId);
+    const row = triggerElement.closest('tr');
+    const displayInput = row.querySelector('input[name="unified_tags_display"]');
+    const dataInput = row.querySelector('input[name="unified_tags_data"]');
+    
+    let selectedTags = [];
+    try {
+        selectedTags = dataInput.value ? JSON.parse(dataInput.value) : [];
+    } catch (e) {
+        selectedTags = [];
+    }
+    
+    // 指定されたカテゴリのタグを削除
+    selectedTags = selectedTags.filter(t => t.category !== category);
+    
+    // 表示とデータを更新
+    displayInput.value = selectedTags.map(t => `${t.name} (${t.type})`).join(', ');
+    dataInput.value = JSON.stringify(selectedTags);
+    
+    // モーダルを再表示して更新
+    showUnifiedTagsSelect(triggerElement);
+}
+
+// 統合モードから詳細モードへの同期関数
+function syncUnifiedToDetail() {
+    // すべての行を処理
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const unifiedInput = row.querySelector('input[name="unified_tags_data"]');
+        if (!unifiedInput || !unifiedInput.value) return;
+        
+        try {
+            const selectedTags = JSON.parse(unifiedInput.value);
+            
+            // 各タグカテゴリを詳細フィールドに設定
+            selectedTags.forEach(tag => {
+                if (tag.category === 'counterparty') {
+                    const displayInput = row.querySelector('input[name="counterparty_display"]');
+                    const idInput = row.querySelector('input[name="counterparty_id"]');
+                    if (displayInput && idInput) {
+                        displayInput.value = tag.name;
+                        idInput.value = tag.id;
+                    }
+                } else if (tag.category === 'item') {
+                    const displayInput = row.querySelector('input[name="item_display"]');
+                    const idInput = row.querySelector('input[name="item_id"]');
+                    if (displayInput && idInput) {
+                        displayInput.value = tag.name;
+                        idInput.value = tag.id;
+                    }
+                } else if (tag.category === 'department') {
+                    const displayInput = row.querySelector('input[name="department_display"]');
+                    const idInput = row.querySelector('input[name="department_id"]');
+                    if (displayInput && idInput) {
+                        displayInput.value = tag.name;
+                        idInput.value = tag.id;
+                    }
+                } else if (tag.category === 'project_tag') {
+                    const displayInput = row.querySelector('input[name="project_tag_display"]');
+                    const idInput = row.querySelector('input[name="project_tag_id"]');
+                    if (displayInput && idInput) {
+                        displayInput.value = tag.name;
+                        idInput.value = tag.id;
+                    }
+                } else if (tag.category === 'memo_tag') {
+                    const displayInput = row.querySelector('input[name="memo_tag_display"]');
+                    const idInput = row.querySelector('input[name="memo_tag_id"]');
+                    if (displayInput && idInput) {
+                        displayInput.value = tag.name;
+                        idInput.value = tag.id;
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('統合タグのパースエラー:', e);
+        }
+    });
+}
+
+// 詳細モードから統合モードへの同期関数
+function syncDetailToUnified() {
+    // すべての行を処理
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const selectedTags = [];
+        
+        // 取引先
+        const counterpartyDisplay = row.querySelector('input[name="counterparty_display"]');
+        const counterpartyId = row.querySelector('input[name="counterparty_id"]');
+        if (counterpartyDisplay && counterpartyId && counterpartyDisplay.value && counterpartyId.value) {
+            const counterparty = allCounterparties.find(c => c.id == counterpartyId.value);
+            if (counterparty) {
+                selectedTags.push({ id: counterparty.id, name: counterparty.name, type: '取引先', category: 'counterparty' });
+            }
+        }
+        
+        // 品目
+        const itemDisplay = row.querySelector('input[name="item_display"]');
+        const itemId = row.querySelector('input[name="item_id"]');
+        if (itemDisplay && itemId && itemDisplay.value && itemId.value) {
+            const item = allItems.find(i => i.id == itemId.value);
+            if (item) {
+                selectedTags.push({ id: item.id, name: item.name, type: '品目', category: 'item' });
+            }
+        }
+        
+        // 部門
+        const departmentDisplay = row.querySelector('input[name="department_display"]');
+        const departmentId = row.querySelector('input[name="department_id"]');
+        if (departmentDisplay && departmentId && departmentDisplay.value && departmentId.value) {
+            const department = allDepartments.find(d => d.id == departmentId.value);
+            if (department) {
+                selectedTags.push({ id: department.id, name: department.name, type: '部門', category: 'department' });
+            }
+        }
+        
+        // 案件タグ
+        const projectTagDisplay = row.querySelector('input[name="project_tag_display"]');
+        const projectTagId = row.querySelector('input[name="project_tag_id"]');
+        if (projectTagDisplay && projectTagId && projectTagDisplay.value && projectTagId.value) {
+            const projectTag = allProjectTags.find(pt => pt.id == projectTagId.value);
+            if (projectTag) {
+                selectedTags.push({ id: projectTag.id, name: projectTag.name, type: '案件', category: 'project_tag' });
+            }
+        }
+        
+        // メモタグ
+        const memoTagDisplay = row.querySelector('input[name="memo_tag_display"]');
+        const memoTagId = row.querySelector('input[name="memo_tag_id"]');
+        if (memoTagDisplay && memoTagId && memoTagDisplay.value && memoTagId.value) {
+            const memoTag = allMemoTags.find(mt => mt.id == memoTagId.value);
+            if (memoTag) {
+                selectedTags.push({ id: memoTag.id, name: memoTag.name, type: 'メモ', category: 'memo_tag' });
+            }
+        }
+        
+        // 統合フィールドに設定
+        const unifiedDisplayInput = row.querySelector('input[name="unified_tags_display"]');
+        const unifiedDataInput = row.querySelector('input[name="unified_tags_data"]');
+        if (unifiedDisplayInput && unifiedDataInput) {
+            unifiedDisplayInput.value = selectedTags.map(t => `${t.name} (${t.type})`).join(', ');
+            unifiedDataInput.value = JSON.stringify(selectedTags);
+        }
+    });
+}
+
+// 仕訳編集機能
+function editCashBook(cashBookId) {
+    const row = document.querySelector(`tr[data-id="${cashBookId}"]`);
+    if (!row) {
+        alert('仕訳が見つかりませんでした。');
+        return;
+    }
+    
+    // 既に編集中の行があればキャンセル
+    const editingRow = document.querySelector('tr.editing');
+    if (editingRow && editingRow !== row) {
+        cancelEdit(editingRow);
+    }
+    
+    // 編集モードに切り替え
+    row.classList.add('editing');
+    
+    // 各セルの値を取得
+    const cells = row.querySelectorAll('td');
+    const date = cells[0].textContent.trim();
+    const template = cells[1].textContent.trim();
+    const account = cells[2].textContent.trim();
+    const taxCategory = cells[3].textContent.trim();
+    
+    // IDを取得
+    const accountItemId = row.getAttribute('data-account-item-id');
+    const taxCategoryId = row.getAttribute('data-tax-category-id');
+    const unifiedTag = cells[4].textContent.trim();
+    const counterparty = cells[5].textContent.trim();
+    const itemName = cells[6].textContent.trim();
+    const department = cells[7].textContent.trim();
+    const projectTag = cells[8].textContent.trim();
+    const memoTag = cells[9].textContent.trim();
+    const remarks = cells[10].textContent.trim();
+    let debit = cells[11].textContent.trim().replace(/,/g, '');
+    let credit = cells[12].textContent.trim().replace(/,/g, '');
+    
+    // 「-」を空文字列に変換
+    if (debit === '-' || debit === '') debit = '';
+    if (credit === '-' || credit === '') credit = '';
+    
+    // 入力フィールドに変換
+    cells[0].innerHTML = `<input type="date" class="form-control" value="${date}" style="width: 100%;">`;
+    cells[1].innerHTML = `<input type="text" class="form-control" value="${template === '-' ? '' : template}" placeholder="テンプレート" readonly style="width: 100%; cursor: pointer;">`;
+    cells[2].innerHTML = `<input type="text" class="form-control edit-account" value="${account}" readonly style="width: 100%; cursor: pointer;" data-row-id="${cashBookId}" data-account-item-id="${accountItemId}">`;
+    cells[3].innerHTML = `<input type="text" class="form-control edit-tax" value="${taxCategory}" readonly style="width: 100%; cursor: pointer;" data-row-id="${cashBookId}" data-tax-category-id="${taxCategoryId}">`; 
+    cells[4].innerHTML = `<input type="text" name="unified_tags_display" id="unified-tags-edit-${cashBookId}" class="form-control" value="${unifiedTag === '-' ? '' : unifiedTag}" placeholder="タグ" readonly style="width: 100%; cursor: pointer;"><input type="hidden" name="unified_tags_data">`;
+    cells[5].innerHTML = `<input type="text" class="form-control" value="${counterparty === '-' ? '' : counterparty}" placeholder="取引先" readonly style="width: 100%; cursor: pointer;">`;
+    cells[6].innerHTML = `<input type="text" class="form-control" value="${itemName === '-' ? '' : itemName}" placeholder="品目" readonly style="width: 100%; cursor: pointer;">`;
+    cells[7].innerHTML = `<input type="text" class="form-control" value="${department === '-' ? '' : department}" placeholder="部門" readonly style="width: 100%; cursor: pointer;">`;
+    cells[8].innerHTML = `<input type="text" class="form-control" value="${projectTag === '-' ? '' : projectTag}" placeholder="案件タグ" readonly style="width: 100%; cursor: pointer;">`;
+    cells[9].innerHTML = `<input type="text" class="form-control" value="${memoTag === '-' ? '' : memoTag}" placeholder="メモタグ" readonly style="width: 100%; cursor: pointer;">`;
+    cells[10].innerHTML = `<input type="text" class="form-control" value="${remarks === '-' ? '' : remarks}" placeholder="備考" style="width: 100%;">`;
+    cells[11].innerHTML = `<input type="number" class="form-control" value="${debit}" placeholder="0" style="width: 100%;">`;
+    cells[12].innerHTML = `<input type="number" class="form-control" value="${credit}" placeholder="0" style="width: 100%;">`;
+    
+    // ボタンを「保存」と「キャンセル」に変更
+    const actionCell = cells[cells.length - 1];
+    actionCell.innerHTML = `
+        <button type="button" class="btn btn-sm btn-success" onclick="saveCashBook(${cashBookId})" style="margin-right: 2px;">保存</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditById(${cashBookId})">キャンセル</button>
+    `;
+    
+    // 候補選択イベントを追加
+    setTimeout(() => {
+        const templateInput = cells[1].querySelector('input');
+        const accountInput = cells[2].querySelector('input');
+        const taxInput = cells[3].querySelector('input');
+        const unifiedTagInput = cells[4].querySelector('input');
+        const counterpartyInput = cells[5].querySelector('input');
+        const itemInput = cells[6].querySelector('input');
+        const departmentInput = cells[7].querySelector('input');
+        const projectTagInput = cells[8].querySelector('input');
+        const memoTagInput = cells[9].querySelector('input');
+        
+        if (templateInput) {
+            templateInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('template', allTemplates);
+            });
+        }
+        
+        if (accountInput) {
+            accountInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                // Use the globally populated allAccountItems list rather than an undefined accountItems variable.
+                openCustomSelectForEdit('account', allAccountItems);
+            });
+        }
+        
+        if (taxInput) {
+            taxInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                // Use the globally populated allTaxCategories list rather than an undefined taxCategories variable.
+                openCustomSelectForEdit('tax', allTaxCategories);
+            });
+        }
+        
+        if (unifiedTagInput) {
+            unifiedTagInput.addEventListener('click', function() {
+                showUnifiedTagsSelect(this);
+            });
+        }
+        
+        if (counterpartyInput) {
+            counterpartyInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('counterparty', allCounterparties);
+            });
+        }
+        
+        if (itemInput) {
+            itemInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('item', allItems);
+            });
+        }
+        
+        if (departmentInput) {
+            departmentInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('department', allDepartments);
+            });
+        }
+        
+        if (projectTagInput) {
+            projectTagInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('project_tag', allProjectTags);
+            });
+        }
+        
+        if (memoTagInput) {
+            memoTagInput.addEventListener('click', function() {
+                currentTargetInput = this;
+                openCustomSelectForEdit('memo_tag', allMemoTags);
+            });
+        }
+    }, 100);
+}
+
+function openCustomSelectForEdit(type, data) {
+    const modal = document.getElementById('customSelectModal');
+    const title = document.getElementById('customSelectTitle');
+    const searchInput = document.getElementById('customSelectSearch');
+    const grid = document.getElementById('customSelectGrid');
+    
+    currentData = data;
+    
+    if (type === 'template') {
+        title.textContent = 'テンプレートを選択';
+    } else if (type === 'account') {
+        title.textContent = '勘定科目を選択';
+    } else if (type === 'tax') {
+        title.textContent = '税区分を選択';
+    } else if (type === 'counterparty') {
+        title.textContent = '取引先を選択';
+    } else if (type === 'item') {
+        title.textContent = '品目を選択';
+    } else if (type === 'department') {
+        title.textContent = '部門を選択';
+    } else if (type === 'project_tag') {
+        title.textContent = '案件タグを選択';
+    } else if (type === 'memo_tag') {
+        title.textContent = 'メモタグを選択';
+    }
+    
+    searchInput.value = '';
+    renderCustomSelectGrid(data);
+    modal.style.display = 'block';
+    searchInput.focus();
+}
+
+function renderCustomSelectGrid(data) {
+    const grid = document.getElementById('customSelectGrid');
+    grid.innerHTML = '';
+    
+    data.forEach(item => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'custom-select-item';
+        // 勘定科目の場合はdisplay_nameまたはaccount_name、その他はnameを使用
+        const displayText = item.display_name || item.account_name || item.name || '';
+        button.textContent = displayText;
+        button.onclick = function() {
+            if (currentTargetInput) {
+                // 表示名を設定
+                currentTargetInput.value = displayText;
+                // 編集モードの場合、data-account-item-idやdata-tax-category-id属性を更新
+                // 勘定科目はedit-accountクラス、税区分はedit-taxクラスで判定
+                if (currentTargetInput.classList.contains('edit-account')) {
+                    currentTargetInput.setAttribute('data-account-item-id', item.id);
+                } else if (currentTargetInput.classList.contains('edit-tax')) {
+                    currentTargetInput.setAttribute('data-tax-category-id', item.id);
+                }
+            }
+            // モーダルを閉じる
+            document.getElementById('customSelectModal').style.display = 'none';
+        };
+        grid.appendChild(button);
+    });
+}
+
+function cancelEditById(cashBookId) {
+    const row = document.querySelector(`tr[data-id="${cashBookId}"]`);
+    if (row) {
+        cancelEdit(row);
+    }
+}
+
+function cancelEdit(row) {
+    row.classList.remove('editing');
+    // ページをリロードして元の表示に戻す
+    location.reload();
+}
+
+function saveCashBook(cashBookId) {
+    const row = document.querySelector(`tr[data-id="${cashBookId}"]`);
+    if (!row) {
+        alert('仕訳が見つかりませんでした。');
+        return;
+    }
+        // 各セルの値を取得
+    const cells = row.querySelectorAll('td');
+    const date = cells[0].querySelector('input').value;
+    const template = cells[1].querySelector('input').value;
+    const accountInput = cells[2].querySelector('input');
+    const account = accountInput.value;
+    const accountItemId = accountInput.getAttribute('data-account-item-id');
+    const taxInput = cells[3].querySelector('input');
+    const taxCategory = taxInput.value;
+    const taxCategoryId = taxInput.getAttribute('data-tax-category-id');
+    const unifiedTag = cells[4].querySelector('input').value;
+    const counterparty = cells[5].querySelector('input').value;
+    const itemName = cells[6].querySelector('input').value;
+    const department = cells[7].querySelector('input').value;
+    const projectTag = cells[8].querySelector('input').value;
+    const memoTag = cells[9].querySelector('input').value;
+    const remarks = cells[10].querySelector('input').value;
+    const debitInput = cells[11].querySelector('input');
+    const creditInput = cells[12].querySelector('input');
+    const debit = debitInput.value ? parseFloat(debitInput.value) : 0;
+    const credit = creditInput.value ? parseFloat(creditInput.value) : 0;
+    
+    // バリデーション：入金と出金の両方に値が入っているかチェック
+    if (debit > 0 && credit > 0) {
+        alert('エラー：入金と出金の両方に金額を入力することはできません。');
+        debitInput.style.borderColor = 'red';
+        creditInput.style.borderColor = 'red';
+        return;
+    }
+    
+    // エラー表示をクリア
+    debitInput.style.borderColor = '';
+    creditInput.style.borderColor = '';
+    
+    // 必須項目のチェック
+    if (!date || !account || !taxCategory) {
+        alert('日付、勘定科目、税区分は必須です。');
+        return;
+    }
+    
+    if (debit === 0 && credit === 0) {
+        alert('入金または出金のいずれかを入力してください。');
+        return;
+    }
+    
+    // サーバーに送信
+    const data = {
+        date: date,
+        template: template || null,
+        account_item_id: accountItemId,
+        tax_category_id: taxCategoryId,
+        unified_tag: unifiedTag || null,
+        counterparty: counterparty || null,
+        item_name: itemName || null,
+        department: department || null,
+        project_tag: projectTag || null,
+        memo_tag: memoTag || null,
+        remarks: remarks || null,
+        debit: debit,
+        credit: credit
+    };
+    
+    fetch(`/cash-books/${cashBookId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('保存しました。');
+            location.reload();
+        } else {
+            alert('エラー：' + (result.error || '保存に失敗しました。'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラー：保存に失敗しました。');
+    });
+}
+</script>
+{% endblock %}

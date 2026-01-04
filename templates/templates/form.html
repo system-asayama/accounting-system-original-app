@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'テンプレート編集' if template else '新規テンプレート作成' }}{% endblock %}
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ 'テンプレート編集' if template else '新規テンプレート作成' }}</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('templates.template_form', template_id=template.id if template else None) }}">
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">テンプレート名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ template.name if template else '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="transaction_type" class="form-label">取引種別 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="transaction_type" name="transaction_type" required>
+                        <option value="">選択してください</option>
+                        <option value="1" {% if template and template.transaction_type == 1 %}selected{% endif %}>収入</option>
+                        <option value="2" {% if template and template.transaction_type == 2 %}selected{% endif %}>支出</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="account_item_id" class="form-label">勘定科目 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="account_item_id" name="account_item_id" required>
+                        <option value="">選択してください</option>
+                        {% for item in account_items %}
+                            <option value="{{ item.id }}" {% if template and template.account_item_id == item.id %}selected{% endif %}>{{ item.account_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tax_category_id" class="form-label">税区分</label>
+                    <select class="form-select" id="tax_category_id" name="tax_category_id">
+                        <option value="">選択してください</option>
+                        {% for tax in tax_categories %}
+                            <option value="{{ tax.id }}" {% if template and template.tax_category_id == tax.id %}selected{% endif %}>{{ tax.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="counterparty" class="form-label">取引先</label>
+                    <input type="text" class="form-control" id="counterparty" name="counterparty" value="{{ template.counterparty if template else '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="item_name" class="form-label">品目</label>
+                    <input type="text" class="form-control" id="item_name" name="item_name" value="{{ template.item_name if template else '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="department" class="form-label">部門</label>
+                    <input type="text" class="form-control" id="department" name="department" value="{{ template.department if template else '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="memo_tag" class="form-label">メモタグ</label>
+                    <input type="text" class="form-control" id="memo_tag" name="memo_tag" value="{{ template.memo_tag if template else '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">備考</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="3">{{ template.remarks if template else '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">{{ '更新' if template else '作成' }}</button>
+                <a href="{{ url_for('templates.templates_list') }}" class="btn btn-secondary">キャンセル</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        new TomSelect("#account_item_id", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        });
+        new TomSelect("#tax_category_id", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        });
+    });
+</script>
+{% endblock %}

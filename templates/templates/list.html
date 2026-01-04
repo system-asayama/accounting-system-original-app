@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}連続仕訳テンプレート一覧{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">連続仕訳テンプレート一覧</h2>
+
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('templates.template_form') }}" class="btn btn-primary">新規テンプレート作成</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>テンプレート名</th>
+                            <th>取引種別</th>
+                            <th>勘定科目</th>
+                            <th>税区分</th>
+                            <th>取引先</th>
+                            <th>品目</th>
+                            <th>部門</th>
+                            <th>メモタグ</th>
+                            <th>備考</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for template in templates %}
+                        <tr>
+                            <td>{{ template.name }}</td>
+                            <td>{{ template.transaction_type }}</td>
+                            <td>{{ template.account_item_name }}</td>
+                            <td>{{ template.tax_category_name }}</td>
+                            <td>{{ template.counterparty }}</td>
+                            <td>{{ template.item_name }}</td>
+                            <td>{{ template.department }}</td>
+                            <td>{{ template.memo_tag }}</td>
+                            <td>{{ template.remarks }}</td>
+                            <td>
+                                <a href="{{ url_for('templates.template_form', template_id=template.id) }}" class="btn btn-sm btn-outline-secondary me-2">編集</a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ template.id }}, '{{ template.name }}')">削除</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center">テンプレートは登録されていません。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteTemplate(templateId, templateName) {
+    if (confirm(`テンプレート「${templateName}」を削除してもよろしいですか？`)) {
+        fetch(`/api/templates/${templateId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // CSRFトークンが必要な場合はここに追加
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(`削除に失敗しました: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('削除中にエラーが発生しました。');
+        });
+    }
+}
+</script>
+{% endblock %}

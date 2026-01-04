@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}店舗別アプリ設定{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+  <h1 style="margin-top:12px">店舗別アプリ設定</h1>
+</div>
+
+{% if session_has_tenant %}
+<div class="card" style="max-width:800px">
+  <h2>選択中のテナント</h2>
+  <p style="font-size:1.1em; font-weight:bold; color:#333; margin:10px 0">
+    {{ selected_tenant_name }}
+  </p>
+</div>
+{% else %}
+<div class="card" style="max-width:800px">
+  <h2>テナント選択</h2>
+  <form method="POST" action="{{ url_for('tenant_admin.app_management') }}">
+    <input type="hidden" name="action" value="select_tenant">
+    
+    <div style="margin-bottom:15px">
+      <label for="tenant_id" style="display:block; margin-bottom:5px">テナント <span style="color:red">*</span></label>
+      <select id="tenant_id" name="tenant_id" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- テナントを選択 --</option>
+        {% for tenant in tenants %}
+        <option value="{{ tenant.id }}" {% if selected_tenant_id == tenant.id %}selected{% endif %}>
+          {{ tenant.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <button type="submit" class="btn">テナントを選択</button>
+  </form>
+</div>
+{% endif %}
+
+{% if selected_tenant_id and stores %}
+<div class="card" style="max-width:800px; margin-top:20px">
+  <h2>店舗選択</h2>
+  <form method="POST" action="{{ url_for('tenant_admin.app_management') }}">
+    <input type="hidden" name="action" value="select_store">
+    <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+    
+    <div style="margin-bottom:15px">
+      <label for="store_id" style="display:block; margin-bottom:5px">店舗 <span style="color:red">*</span></label>
+      <select id="store_id" name="store_id" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- 店舗を選択 --</option>
+        {% for store in stores %}
+        <option value="{{ store.id }}" {% if selected_store_id == store.id %}selected{% endif %}>
+          {{ store.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <button type="submit" class="btn">店舗を選択</button>
+  </form>
+</div>
+{% endif %}
+
+{% if selected_store_id and store_apps %}
+<div class="card" style="max-width:800px; margin-top:20px">
+  <h2>アプリ設定</h2>
+  <form method="POST" action="{{ url_for('tenant_admin.app_management') }}">
+    <input type="hidden" name="action" value="update_apps">
+    <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+    <input type="hidden" name="store_id" value="{{ selected_store_id }}">
+    
+    <table style="width:100%; border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:2px solid #ddd">
+          <th style="text-align:left; padding:10px">アプリ名</th>
+          <th style="text-align:center; padding:10px; width:120px">使用可否</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in store_apps %}
+        <tr style="border-bottom:1px solid #eee">
+          <td style="padding:10px">{{ app.display_name }}</td>
+          <td style="text-align:center; padding:10px">
+            <label style="display:inline-flex; align-items:center; cursor:pointer">
+              <input type="checkbox" name="app_{{ app.name }}" {% if app.enabled %}checked{% endif %} style="margin-right:5px">
+              <span>有効</span>
+            </label>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <button type="submit" class="btn" style="margin-top:20px">設定を保存</button>
+  </form>
+</div>
+{% endif %}
+
+<a href="{{ url_for('tenant_admin.dashboard') }}" class="btn" style="margin-top:20px">ダッシュボードに戻る</a>
+{% endblock %}

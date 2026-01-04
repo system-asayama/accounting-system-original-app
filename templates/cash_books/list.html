@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}出納帳一覧 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-form {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .search-form input {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 300px;
+        margin-right: 0.5rem;
+    }
+    
+    .table-container {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background-color: #34495e;
+        color: white;
+    }
+    
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .action-buttons {
+        white-space: nowrap;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        margin-right: 0.25rem;
+    }
+    
+    .pagination {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+    
+    .pagination a, .pagination span {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        margin: 0.25rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #3498db;
+    }
+    
+    .pagination a:hover {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .pagination .current {
+        background-color: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+    
+    .stats {
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background-color: #ecf0f1;
+        border-radius: 4px;
+    }
+    
+    .amount {
+        text-align: right;
+        font-family: monospace;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>出納帳一覧</h2>
+
+<div class="search-form">
+    <form method="GET" action="{{ url_for('cash_books.cash_books_list') }}">
+        <input type="text" name="search" placeholder="勘定科目、取引先、備考で検索..." value="{{ search_query }}">
+        <button type="submit" class="btn btn-primary">検索</button>
+        {% if search_query %}
+            <a href="{{ url_for('cash_books.cash_books_list') }}" class="btn btn-secondary">クリア</a>
+        {% endif %}
+    </form>
+</div>
+
+{% set total_transactions = 0 %}
+{% for account_name, items in grouped_cash_books.items() %}
+    {% set total_transactions = total_transactions + items|length %}
+{% endfor %}
+
+<div class="stats">
+    <strong>合計:</strong> {{ total_transactions }} 件
+    {% if search_query %}
+        <span>(検索結果: 「{{ search_query }}」)</span>
+    {% endif %}
+</div>
+
+{% for account in accounts %}
+    {% if account.is_visible_in_list %}
+    {% set account_items = grouped_cash_books.get(account.account_name, []) %}
+    {% set stats = account_stats.get(account.account_name, {'batch': 0, 'transaction_unprocessed': 0, 'transaction_processed': 0, 'journal': 0}) %}
+    {% set total_count = stats.batch + stats.transaction_unprocessed + stats.transaction_processed + stats.journal %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h4 class="mb-2">{{ account.account_name }} (合計: {{ total_count }} 件)</h4>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                <a href="{{ url_for('transactions.imported_transactions_list', account_item_id=account.account_item_id) }}" class="text-decoration-none">取引明細 未処理: {{ stats.transaction_unprocessed }}件 | 処理済: {{ stats.transaction_processed }}件</a>
+                <span style="margin: 0 1rem;"></span>
+                <a href="{{ url_for('cash_books.batch_create_cash_books_page', account_item_id=account.account_item_id) }}" class="text-decoration-none">連続仕訳: {{ stats.batch }}件</a>
+                <span style="margin: 0 1rem;"></span>
+                <a href="{{ url_for('journal_entries.journal_entries_list', account_item_id=account.account_item_id) }}" class="text-decoration-none">振替伝票: {{ stats.journal }}件</a>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+<h2 class="h4 mt-5 mb-3" style="margin-top: 3rem !important;">取引登録</h2>
+<div class="card p-3">
+    <a href="{{ url_for('cash_books.batch_create_cash_books_page') }}" class="btn btn-success btn-lg">連続仕訳登録</a>
+    <a href="{{ url_for('transactions.imported_transactions_list') }}" class="btn btn-primary btn-lg mt-2">取引明細登録</a>
+</div>
+
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteItem(itemId, transactionDate) {
+    if (confirm(`出納帳「${transactionDate}」を削除してもよろしいですか？`)) {
+        fetch(`/api/cash-books/${itemId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('削除に失敗しました: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('エラーが発生しました: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

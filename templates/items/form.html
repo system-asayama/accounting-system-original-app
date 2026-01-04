@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{% if item %}品目編集{% else %}品目新規作成{% endif %} - 会計システム{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('items.items_list') }}">品目一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if item %}編集{% else %}新規作成{% endif %}</li>
+        </ol>
+    </nav>
+
+    <h1 class="h2 mb-4">{% if item %}品目編集{% else %}品目新規作成{% endif %}</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{% if item %}{{ url_for('items.item_update', item_id=item.id) }}{% else %}{{ url_for('items.item_create') }}{% endif %}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">品目名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ item.name if item else '' }}" required>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">{% if item %}更新{% else %}作成{% endif %}</button>
+                    <a href="{{ url_for('items.items_list') }}" class="btn btn-secondary">キャンセル</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

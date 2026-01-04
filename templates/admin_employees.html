@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}従業員一覧{% endblock %}
+{% block content %}
+<style>
+  .employee-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .employee-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+  }
+  
+  .employee-table thead tr {
+    background: #f5f5f5;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  .employee-table th {
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  
+  .employee-table tbody tr {
+    border-bottom: 1px solid #eee;
+  }
+  
+  .employee-table td {
+    padding: 8px;
+    white-space: nowrap;
+  }
+  
+  .employee-table td[data-label="所属店舗: "] {
+    white-space: normal;
+  }
+  
+  .employee-table .btn.small {
+    font-size: 0.9em;
+    padding: 4px 8px;
+  }
+  
+  /* スマホ用カード型レイアウト */
+  @media (max-width: 768px) {
+    .employee-table-wrapper {
+      overflow-x: visible;
+    }
+    
+    .employee-table thead {
+      display: none;
+    }
+    
+    .employee-table tbody {
+      display: block;
+    }
+    
+    .employee-table tbody tr {
+      display: block;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    
+    .employee-table td {
+      display: block;
+      padding: 8px 0;
+      white-space: normal;
+      border: none;
+    }
+    
+    .employee-table td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      display: inline-block;
+      width: 100px;
+      color: #374151;
+    }
+    
+    .employee-table td.employee-actions {
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .employee-table td.employee-actions::before {
+      display: none;
+    }
+    
+    .employee-table .btn.small {
+      display: inline-block;
+      margin: 4px 4px 4px 0;
+      font-size: 0.9em;
+      padding: 8px 12px;
+    }
+    
+    .employee-table td.employee-actions form {
+      display: inline-block;
+    }
+    
+    .employee-table td[data-label="所属店舗: "] {
+      position: relative;
+    }
+    
+    .employee-table td[data-label="所属店舗: "]::before {
+      display: inline-block;
+      position: absolute;
+      left: 0;
+    }
+    
+    .employee-table td[data-label="所属店舗: "] span {
+      margin-left: 100px;
+    }
+    
+    .employee-table td[data-label="所属店舗: "] span:first-child {
+      display: inline !important;
+    }
+    
+    .employee-table td[data-label="所属店舗: "] span:not(:first-child) {
+      display: block;
+    }
+  }
+</style>
+
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+  {% if store %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">従業員一覧</h1>
+</div>
+
+<div style="margin-bottom:20px">
+  <a class="btn" href="{{ url_for('admin.employee_new') }}">新規作成</a>
+  <a class="btn" href="{{ url_for('admin.employee_invite') }}">従業員を招待</a>
+  <a class="btn sub" href="{{ url_for('admin.dashboard') }}">戻る</a>
+</div>
+
+<!-- 検索フィールド -->
+{% if employees %}
+<div style="margin-bottom:20px">
+  <input type="text" id="searchInput" placeholder="ログインIDまたは氏名で検索..." 
+         style="width:100%;max-width:400px;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:16px">
+  <span id="searchResult" style="margin-left:10px;color:#666"></span>
+</div>
+
+<div class="employee-table-wrapper">
+  <table class="employee-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>ログインID</th>
+        <th>氏名</th>
+        <th>メールアドレス</th>
+        <th>所属店舗</th>
+        <th>有効</th>
+        <th>作成日時</th>
+        <th>更新日時</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in employees %}
+      <tr class="employee-row" 
+          data-login-id="{{ e.login_id }}" 
+          data-name="{{ e.name }}">
+        <td data-label="ID: ">{{ e.id }}</td>
+        <td data-label="ログインID: "><code>{{ e.login_id }}</code></td>
+        <td data-label="氏名: "><strong>{{ e.name }}</strong></td>
+        <td data-label="メールアドレス: ">{{ e.email if e.email else '-' }}</td>
+        <td data-label="所属店舗: " style="color:#666">
+          {% if e.stores %}
+            {% for store in e.stores %}
+              <span style="display:block">{{ store.name }}</span>
+            {% endfor %}
+          {% else %}
+            <span>未設定</span>
+          {% endif %}
+        </td>
+        <td data-label="有効: ">
+          {% if e.active %}
+            <span style="color:#4caf50;font-weight:bold">✓ 有効</span>
+          {% else %}
+            <span style="color:#999">無効</span>
+          {% endif %}
+        </td>
+        <td data-label="作成日時: " style="color:#666">{{ e.created_at }}</td>
+        <td data-label="更新日時: " style="color:#666">{{ e.updated_at if e.updated_at else '-' }}</td>
+        <td class="employee-actions">
+          <a class="btn small" href="{{ url_for('admin.employee_edit', employee_id=e.id) }}">編集</a>
+          <form method="post" action="{{ url_for('admin.employee_delete', employee_id=e.id) }}" style="display:inline" onsubmit="return confirm('本当に削除しますか？')">
+            <button class="btn small" type="submit" style="background:#d32f2f">削除</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.employee_toggle_active', employee_id=e.id) }}" style="display:inline">
+            {% if e.active %}
+              <button type="submit" class="btn small" style="background:#ff9800;color:white">無効化</button>
+            {% else %}
+              <button type="submit" class="btn small" style="background:#4caf50;color:white">有効化</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p style="color:#666">従業員が登録されていません。</p>
+{% endif %}
+
+<script>
+// 検索機能
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('searchInput');
+  const searchResult = document.getElementById('searchResult');
+  const employeeRows = document.querySelectorAll('.employee-row');
+  
+  if (!searchInput) return;
+  
+  function performSearch() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+    
+    // 行を検索
+    employeeRows.forEach(function(row) {
+      const loginId = row.dataset.loginId.toLowerCase();
+      const name = row.dataset.name.toLowerCase();
+      
+      if (query === '' || loginId.includes(query) || name.includes(query)) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    // 検索結果を表示
+    if (query === '') {
+      searchResult.textContent = '';
+    } else {
+      const totalCount = employeeRows.length;
+      searchResult.textContent = visibleCount + ' / ' + totalCount + ' 件表示中';
+    }
+  }
+  
+  // 入力イベントをリスン
+  searchInput.addEventListener('input', performSearch);
+  searchInput.addEventListener('keyup', performSearch);
+});
+</script>
+{% endblock %}

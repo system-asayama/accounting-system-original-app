@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}管理者ログイン{% endblock %}
+{% block content %}
+<h2>管理者ログイン</h2>
+
+<div class="card" style="max-width:420px;">
+  <form method="post">
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">ログインID</label>
+      <input type="text" name="login_id" required autofocus placeholder="ログインIDを入力" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">パスワード</label>
+      <input type="password" name="password" required placeholder="パスワードを入力" style="width:100%;padding:8px">
+    </div>
+
+    {% if error %}
+      <div class="small" style="color:var(--danger); margin-bottom:12px;">{{ error }}</div>
+    {% endif %}
+
+    <div style="display:flex; gap:8px;">
+      <button class="btn" type="submit">ログイン</button>
+      <a class="btn sub" href="{{ url_for('auth.select_login') }}">戻る</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

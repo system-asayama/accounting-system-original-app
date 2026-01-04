@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}アプリ管理 - システム管理者{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>アプリ管理</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card">
+        <h2>テナント別アプリ使用設定</h2>
+        <p>各テナントで使用可能なアプリケーションを管理します。</p>
+        
+        {% if tenants %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>テナント名</th>
+                        {% for app in available_apps %}
+                        <th>{{ app.icon }} {{ app.name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tenant in tenants %}
+                    <tr>
+                        <td>{{ tenant.名称 }}</td>
+                        {% for app in available_apps %}
+                        <td>
+                            {% set is_enabled = tenant_app_settings.get(tenant.id, {}).get(app.id, 0) %}
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+                                <input type="hidden" name="app_id" value="{{ app.id }}">
+                                {% if is_enabled %}
+                                    <input type="hidden" name="action" value="disable">
+                                    <button type="submit" class="btn btn-sm btn-success">有効</button>
+                                {% else %}
+                                    <input type="hidden" name="action" value="enable">
+                                    <button type="submit" class="btn btn-sm btn-secondary">無効</button>
+                                {% endif %}
+                            </form>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>テナントが登録されていません。</p>
+        {% endif %}
+        
+        <a href="{{ url_for('system_admin.dashboard') }}" class="btn btn-secondary">ダッシュボードに戻る</a>
+    </div>
+    
+    <div class="card mt-4">
+        <h2>利用可能なアプリ一覧</h2>
+        {% for app in available_apps %}
+        <div class="app-info">
+            <h3>{{ app.icon }} {{ app.name }}</h3>
+            <p>{{ app.description }}</p>
+            <p><strong>スコープ:</strong> {{ app.scope }}</p>
+            <p><strong>機能:</strong></p>
+            <ul>
+                {% for route in app.routes %}
+                <li>{{ route.name }} ({{ route.path }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.app-info {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+.table th {
+    background-color: #f5f5f5;
+}
+.btn {
+    padding: 5px 15px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+.btn-sm {
+    font-size: 0.875rem;
+}
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.mt-4 {
+    margin-top: 2rem;
+}
+</style>
+{% endblock %}

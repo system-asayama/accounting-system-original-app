@@ -1,0 +1,39 @@
+{% extends "bootstrap.html" %}
+
+{% block title %}テナント選択{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>テナント選択</h4>
+                </div>
+                <div class="card-body">
+                    <p>管理するテナントを選択してください。</p>
+                    
+                    {% if tenants %}
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="tenant_id" class="form-label">テナント</label>
+                            <select class="form-select" id="tenant_id" name="tenant_id" required>
+                                <option value="">-- 選択してください --</option>
+                                {% for tenant in tenants %}
+                                <option value="{{ tenant.id }}">{{ tenant.名称 }} ({{ tenant.slug }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">選択</button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        所属しているテナントがありません。システム管理者にお問い合わせください。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

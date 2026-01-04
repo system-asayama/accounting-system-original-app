@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}出納帳マスター - {% if item %}編集{% else %}新規作成{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('cash_book_masters.cash_book_masters_list') }}">出納帳マスター</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if item %}編集{% else %}新規作成{% endif %}</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">出納帳マスター - {% if item %}編集{% else %}新規作成{% endif %}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{% if item %}{{ url_for('cash_book_masters.cash_book_master_edit', item_id=item.id) }}{% else %}{{ url_for('cash_book_masters.cash_book_master_create') }}{% endif %}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">出納帳名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ item.name if item else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">説明</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ item.description if item else '' }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">{% if item %}更新{% else %}登録{% endif %}</button>
+                <a href="{{ url_for('cash_book_masters.cash_book_masters_list') }}" class="btn btn-secondary">キャンセル</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

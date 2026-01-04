@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}取引明細インポート{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">ホーム</a></li>
+            <li class="breadcrumb-item active" aria-current="page">取引明細インポート</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">取引明細インポート</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">CSV/Excelファイルのアップロード</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('transactions.transaction_import_upload') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="account_id" class="form-label">口座選択 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="account_id" name="account_id" required>
+                        <option value="">-- 口座を選択 --</option>
+                        {% for account in accounts %}
+                        <option value="{{ account.id }}">{{ account.account_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">インポートする取引明細の口座を選択してください</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="file" class="form-label">ファイル選択 <span class="text-danger">*</span></label>
+                    <input class="form-control" type="file" id="file" name="file" accept=".csv,.xlsx,.xls" required>
+                    <div class="form-text">CSV形式またはExcel形式のファイルを選択してください</div>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <h6 class="alert-heading">ファイルフォーマット</h6>
+                    <p class="mb-0">以下のカラムを含むCSV/Excelファイルをアップロードしてください：</p>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>取引日</strong>: YYYY-MM-DD または YYYY/MM/DD 形式</li>
+                        <li><strong>摘要</strong>: 取引の内容</li>
+                        <li><strong>入金金額</strong>: 入金がある場合の金額（数値）</li>
+                        <li><strong>出金金額</strong>: 出金がある場合の金額（数値）</li>
+                    </ul>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('transactions.imported_transactions_list') }}" class="btn btn-secondary">キャンセル</a>
+                    <button type="submit" class="btn btn-primary">インポート</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">サンプルCSVフォーマット</h5>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3 rounded"><code>取引日,摘要,入金金額,出金金額
+2025-08-01,振込入金,0,220
+2025-08-01,パワー振込,0,93600
+2025-07-31,預金ご返済,0,18000</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

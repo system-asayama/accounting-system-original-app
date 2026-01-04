@@ -1,0 +1,696 @@
+{% extends "base.html" %}
+
+{% block title %}事業所の設定 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .settings-header {
+        margin-bottom: 30px;
+    }
+
+    .settings-header h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .settings-header p {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+
+    /* タブナビゲーション */
+    .tabs {
+        display: flex;
+        border-bottom: 2px solid #ecf0f1;
+        margin-bottom: 30px;
+        gap: 0;
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        padding: 12px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #7f8c8d;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .tab-button:hover {
+        color: #2c3e50;
+    }
+
+    .tab-button.active {
+        color: #3498db;
+        border-bottom-color: #3498db;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* フォーム */
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section h3 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-item label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .form-item label .required {
+        color: #e74c3c;
+        margin-left: 4px;
+    }
+
+    .form-item input,
+    .form-item textarea,
+    .form-item select {
+        padding: 10px 12px;
+        border: 1px solid #bdc3c7;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.3s;
+    }
+
+    .form-item input:focus,
+    .form-item textarea:focus,
+    .form-item select:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-item textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-item .hint {
+        font-size: 12px;
+        color: #7f8c8d;
+        margin-top: 5px;
+    }
+
+    .form-item-radio {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-item-radio label {
+        display: flex;
+        align-items: center;
+        font-weight: normal;
+        margin-bottom: 0;
+    }
+
+    .form-item-radio input[type="radio"] {
+        margin-right: 8px;
+        width: auto;
+    }
+
+    /* ボタン */
+    .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 30px;
+    }
+
+    button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+
+    .btn-secondary {
+        background-color: #ecf0f1;
+        color: #2c3e50;
+    }
+
+    .btn-secondary:hover {
+        background-color: #bdc3c7;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+        .form-group {
+            grid-template-columns: 1fr;
+        }
+
+        .tabs {
+            flex-direction: column;
+        }
+
+        .tab-button {
+            border-bottom: none;
+            border-left: 3px solid transparent;
+            padding: 12px 15px;
+        }
+
+        .tab-button.active {
+            border-bottom: none;
+            border-left-color: #3498db;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h2>事業所の設定</h2>
+        <p>事業所の基本情報、会計期間、その他の設定を管理します。</p>
+    </div>
+
+    {% if success_message %}
+    <div class="alert alert-success">{{ success_message }}</div>
+    {% endif %}
+
+    {% if error_message %}
+    <div class="alert alert-error">{{ error_message }}</div>
+    {% endif %}
+
+    <!-- タブナビゲーション -->
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('basic-info')">基本情報</button>
+        <button class="tab-button" onclick="switchTab('accounting-period')">会計期間</button>
+        <button class="tab-button" onclick="switchTab('opening-balance')">期首残高設定</button>
+        <button class="tab-button" onclick="switchTab('invoice-settings')">請求書設定</button>
+        <button class="tab-button" onclick="switchTab('tax-settings')">消費税設定</button>
+        <button class="tab-button" onclick="switchTab('fixed-asset-settings')">固定資産台帳の設定</button>
+        <button class="tab-button" onclick="switchTab('other-settings')">その他</button>
+    </div>
+
+    <!-- タブ1: 基本情報 -->
+    <div id="basic-info" class="tab-content active">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="basic-info">
+
+            <div class="form-section">
+                <h3>事業所の基本情報</h3>
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>事業所名<span class="required">*</span></label>
+                        <input type="text" name="name" value="{{ organization.name or '' }}" required>
+                        <span class="hint">法人名または個人名</span>
+                    </div>
+                    <div class="form-item">
+                        <label>事業所コード</label>
+                        <input type="text" name="code" value="{{ organization.code or '' }}">
+                        <span class="hint">任意の識別コード</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>事業種別<span class="required">*</span></label>
+                        <select name="business_type" required>
+                            <option value="corporate" {% if organization.business_type == 'corporate' %}selected{% endif %}>法人</option>
+                            <option value="individual" {% if organization.business_type == 'individual' %}selected{% endif %}>個人</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>所在地</label>
+                        <input type="text" name="address" value="{{ organization.address or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>電話番号</label>
+                        <input type="tel" name="phone" value="{{ organization.phone or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>メールアドレス</label>
+                        <input type="email" name="email" value="{{ organization.email or '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- タブ2: 会計期間 -->
+    <div id="accounting-period" class="tab-content">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="accounting-period">
+
+            <div class="form-section">
+                <h3>会計期間</h3>
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>会計期間開始日<span class="required">*</span></label>
+                        <input type="date" name="start_date" value="{{ start_date or '' }}" required>
+                    </div>
+                    <div class="form-item">
+                        <label>会計期間終了日<span class="required">*</span></label>
+                        <input type="date" name="end_date" value="{{ end_date or '' }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>期数</label>
+                        <input type="number" name="period_number" value="{{ period_number or '' }}" min="1">
+                        <span class="hint">登録は任意です。例：1期、第1期など</span>
+                    </div>
+                </div>
+
+                <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                    <p style="color: #0c5460; font-size: 14px; margin: 0;">会計期間を変更すると、既存の取引データに影響を与える可能性があります。変更前に必ずバックアップを取ってください。</p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- タブ3: 期首残高設定 -->
+    <div id="opening-balance" class="tab-content">
+        <div class="form-section">
+            <h3>期首残高設定</h3>
+            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">会計期間開始時点の貸借対照表科目の残高を設定します。</p>
+            
+            <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                <p style="color: #0c5460; font-size: 14px; margin: 0;">資産科目は借方、負債・純資産科目は貸方に金額を入力してください。借方合計と貸方合計が一致するように入力してください。</p>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="opening-balance-table" style="width: 100%; border-collapse: collapse; background: white;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2c3e50; border: 1px solid #dee2e6;">勘定科目</th>
+                            <th style="padding: 12px; text-align: right; font-weight: 600; color: #2c3e50; border: 1px solid #dee2e6; width: 200px;">借方金額</th>
+                            <th style="padding: 12px; text-align: right; font-weight: 600; color: #2c3e50; border: 1px solid #dee2e6; width: 200px;">貸方金額</th>
+                        </tr>
+                    </thead>
+                    <tbody id="opening-balance-tbody">
+                        {% for category_name, items in bs_accounts_by_category.items() %}
+                        <tr style="background-color: #e9ecef;">
+                            <td colspan="3" style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold; color: #2c3e50;">{{ category_name }}</td>
+                        </tr>
+                        {% for item in items %}
+                        {% set ob = opening_balance_dict.get(item['id']) %}
+                        <tr data-account-id="{{ item['id'] }}" {% if ob %}data-id="{{ ob.id }}"{% endif %}>
+                            <td style="padding: 10px; border: 1px solid #dee2e6; padding-left: 30px;">
+                                {{ item['display_name'] or item['account_name'] }}
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                <input type="number" class="debit-amount" value="{% if ob %}{{ ob.debit_amount }}{% else %}0{% endif %}" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; text-align: right;" min="0" step="0.01">
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                <input type="number" class="credit-amount" value="{% if ob %}{{ ob.credit_amount }}{% else %}0{% endif %}" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; text-align: right;" min="0" step="0.01">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="button-group" style="margin-top: 20px;">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="button" class="btn-primary" onclick="saveOpeningBalances()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- タブ4: 請求書設定 -->
+    <div id="invoice-settings" class="tab-content">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="invoice-settings">
+
+            <div class="form-section">
+                <h3>請求書の設定</h3>
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>請求書番号の開始番号</label>
+                        <input type="number" name="invoice_start_number" value="{{ invoice_start_number or '1' }}" min="1">
+                    </div>
+                    <div class="form-item">
+                        <label>請求書の通貨</label>
+                        <select name="invoice_currency">
+                            <option value="JPY">日本円（¥）</option>
+                            <option value="USD">米ドル（$）</option>
+                            <option value="EUR">ユーロ（€）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>請求書の備考欄</label>
+                        <textarea name="invoice_notes" placeholder="請求書に表示される備考"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- タブ4: 消費税設定 -->
+    <div id="tax-settings" class="tab-content">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="tax-settings">
+
+            <!-- 消費税の設定 -->
+            <div class="form-section">
+                <h3>消費税の設定</h3>
+            </div>
+
+            <!-- 会計処理の設定 -->
+            <div class="form-section">
+                <h3>会計処理の設定</h3>
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>消費税の経理処理</label>
+                        <select name="tax_accounting_method">
+                            <option value="tax_excluded">税込経理</option>
+                            <option value="tax_included">税抜経理</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>消費税の端数処理</label>
+                        <select name="tax_rounding">
+                            <option value="cut_off">切り捨て</option>
+                            <option value="round">四捨五入</option>
+                            <option value="round_up">切り上げ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消費税申告の事前設定 -->
+            <div class="form-section">
+                <h3>消費税申告の事前設定</h3>
+                <p style="margin: 10px 0; font-size: 14px; color: #666;">課税事業者は、課税方式を選択しましょう。適格請求書発行事業者（インボイス発行事業者）も対象となります。</p>
+                
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>課税方式と事業区分</label>
+                        <select name="tax_filing_method">
+                            <option value="exempt">免税</option>
+                            <option value="simplified">簡易課税</option>
+                            <option value="general_individual">一般課税（個別対応方式）</option>
+                            <option value="general_lump_sum">一般課税（一括比例配分方式）</option>
+                            <option value="general_full">一般課税（全額控除）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>簡易課税の事業区分</label>
+                        <select name="simplified_tax_category">
+                            <option value="category1">第一種：卸売業</option>
+                            <option value="category2">第二種：小売業</option>
+                            <option value="category3">第三種：農林水産業、工業、建設業、製造業など</option>
+                            <option value="category4">第四種：飲食店業など</option>
+                            <option value="category5">第五種：金融・保険業、運輸通信業、サービス業など</option>
+                            <option value="category6">第六種：不動産業など</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label style="display: block; margin-bottom: 10px;">保存時に「課税方式」に従い実行する処理</label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" name="update_tax_rate_on_save">
+                            <span>全年度中に登録した取引の税区分を一括更新</span>
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" name="update_tax_category_on_save">
+                            <span>勘定科目の税区分を一括更新</span>
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" name="update_tax_use_on_save">
+                            <span>税区分の「使用」を一括更新</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消費税申告の計算方式 -->
+            <div class="form-section">
+                <h3>消費税申告の計算方式</h3>
+                <div class="form-group">
+                    <div class="form-item">
+                        <label>計算方式</label>
+                        <select name="tax_calculation_method">
+                            <option value="sales_minus_purchases_minus_purchases">売上（割戻し）× 仕入（割戻し）</option>
+                            <option value="sales_minus_purchases_plus_purchases">売上（割戻し）× 仕入（積上げ）</option>
+                            <option value="sales_plus_purchases_plus_purchases">売上（積上げ）× 仕入（積上げ）</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- タブ5: 固定資産台帳の設定 -->
+    <div id="fixed-asset-settings" class="tab-content">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="fixed-asset-settings">
+
+            <!-- 月次償却 -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label>月次償却</label>
+                    <div class="form-item-radio">
+                        <label><input type="radio" name="monthly_depreciation" value="do" checked> する</label>
+                        <label><input type="radio" name="monthly_depreciation" value="do_not"> しない（年次償却）</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 固定資産の控除法 -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label>固定資産の控除法</label>
+                    <div class="form-item-radio">
+                        <label><input type="radio" name="depreciation_method" value="direct" checked> 直接控除法</label>
+                        <label><input type="radio" name="depreciation_method" value="indirect"> 間接控除法</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 減価償却時の累計額 -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label>減価償却時の累計額</label>
+                    <div class="form-item-radio">
+                        <label><input type="radio" name="accumulated_depreciation" value="common" checked> 共通</label>
+                        <label><input type="radio" name="accumulated_depreciation" value="item_specific"> 科目別減価償却累計額</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- タブ6: その他 -->
+    <div id="other-settings" class="tab-content">
+        <form method="POST" action="/organization_settings" class="settings-form">
+            <input type="hidden" name="tab" value="other-settings">
+
+            <div class="form-section">
+                <h3>その他の設定</h3>
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>
+                            <input type="checkbox" name="enable_notifications">
+                            メール通知を有効にする
+                        </label>
+                        <span class="hint">重要な更新やアラートをメールで受け取ります</span>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>
+                            <input type="checkbox" name="enable_auto_backup">
+                            自動バックアップを有効にする
+                        </label>
+                        <span class="hint">毎日自動的にデータをバックアップします</span>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <div class="form-item">
+                        <label>言語設定</label>
+                        <select name="language">
+                            <option value="ja">日本語</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        // すべてのタブコンテンツを非表示にする
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // すべてのタブボタンを非アクティブにする
+        const buttons = document.querySelectorAll('.tab-button');
+        buttons.forEach(button => {
+            button.classList.remove('active');
+        });
+
+        // 選択されたタブを表示する
+        document.getElementById(tabName).classList.add('active');
+
+        // 対応するボタンをアクティブにする
+        event.target.classList.add('active');
+    }
+
+    function resetForm() {
+        if (confirm('フォームをリセットしますか？')) {
+            document.querySelector('.settings-form').reset();
+        }
+    }
+
+    // 期首残高設定の関数
+    function saveOpeningBalances() {
+        const tbody = document.getElementById('opening-balance-tbody');
+        const rows = tbody.querySelectorAll('tr[data-account-id]');
+        const data = [];
+
+        rows.forEach(row => {
+            const accountId = row.getAttribute('data-account-id');
+            const debitAmount = row.querySelector('.debit-amount');
+            const creditAmount = row.querySelector('.credit-amount');
+            const id = row.getAttribute('data-id');
+            const debitValue = parseFloat(debitAmount.value) || 0;
+            const creditValue = parseFloat(creditAmount.value) || 0;
+
+            // 借方または貸方に値がある場合のみ保存
+            if (debitValue > 0 || creditValue > 0) {
+                data.push({
+                    id: id || null,
+                    account_item_id: parseInt(accountId),
+                    debit_amount: debitValue,
+                    credit_amount: creditValue
+                });
+            }
+        });
+
+        // データをサーバーに送信
+        fetch('/organization_settings/opening_balances', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ opening_balances: data })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('期首残高を保存しました。');
+                location.reload();
+            } else {
+                alert('保存に失敗しました: ' + (result.error || '不明なエラー'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('保存中にエラーが発生しました。');
+        });
+    }
+</script>
+{% endblock %}

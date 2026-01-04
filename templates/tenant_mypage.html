@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}マイページ{% endblock %}
+{% block content %}
+<h1>テナント管理者マイページ</h1>
+
+<div class="card" style="max-width:640px">
+  <h2>プロフィール情報</h2>
+  
+  <div style="margin-top:20px">
+    <table style="width:100%; border-collapse:collapse">
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; width:40%; white-space:nowrap">ユーザーID</th>
+        <td style="padding:8px">{{ user.id }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">ログインID</th>
+        <td style="padding:8px">{{ user.login_id }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">氏名</th>
+        <td style="padding:8px">{{ user.name }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">メールアドレス</th>
+        <td style="padding:8px; word-break:break-all; overflow-wrap:break-word">{{ user.email or '未設定' }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">ロール</th>
+        <td style="padding:8px">テナント管理者</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">テナント名</th>
+        <td style="padding:8px">{{ tenant_name }}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">権限</th>
+        <td style="padding:8px">
+          {% if user.can_manage_admins %}
+            <span style="background-color:#28a745; color:white; padding:5px 10px; border-radius:3px; font-size:12px">管理者管理</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee">
+        <th style="text-align:left; padding:8px; white-space:nowrap">作成日時</th>
+        <td style="padding:8px">{{ user.created_at }}</td>
+      </tr>
+      <tr>
+        <th style="text-align:left; padding:8px; white-space:nowrap">更新日時</th>
+        <td style="padding:8px">{{ user.updated_at }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <h2 style="margin-top:30px">プロフィール編集</h2>
+  <form method="POST" action="{{ url_for('tenant_admin.mypage') }}" style="margin-top:20px">
+    <input type="hidden" name="action" value="update_profile">
+    
+    <div style="margin-bottom:15px">
+      <label for="login_id" style="display:block; margin-bottom:5px">ログインID <span style="color:red">*</span></label>
+      <input type="text" id="login_id" name="login_id" value="{{ user.login_id }}" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="name" style="display:block; margin-bottom:5px">氏名 <span style="color:red">*</span></label>
+      <input type="text" id="name" name="name" value="{{ user.name }}" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="email" style="display:block; margin-bottom:5px">メールアドレス</label>
+      <input type="email" id="email" name="email" value="{{ user.email or '' }}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <button type="submit" class="btn">プロフィールを更新</button>
+  </form>
+
+  <h2 style="margin-top:30px">パスワード変更</h2>
+  <form method="POST" action="{{ url_for('tenant_admin.mypage') }}" style="margin-top:20px">
+    <input type="hidden" name="action" value="change_password">
+    <div style="margin-bottom:15px">
+      <label for="current_password" style="display:block; margin-bottom:5px">現在のパスワード</label>
+      <input type="password" id="current_password" name="current_password" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="new_password" style="display:block; margin-bottom:5px">新しいパスワード</label>
+      <input type="password" id="new_password" name="new_password" placeholder="8文字以上" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="new_password_confirm" style="display:block; margin-bottom:5px">新しいパスワード（確認）</label>
+      <input type="password" id="new_password_confirm" name="new_password_confirm" placeholder="もう一度入力" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+    </div>
+    
+    <button type="submit" class="btn">パスワードを変更</button>
+  </form>
+
+  <h2 style="margin-top:30px">テナント選択</h2>
+  <p style="margin-top:10px; color:#666">ダッシュボードや各種管理機能にアクセスするには、テナントを選択してください。</p>
+  
+  <form method="POST" action="{{ url_for('tenant_admin.select_tenant_from_mypage') }}" style="margin-top:20px">
+    <div style="margin-bottom:15px">
+      <label for="tenant_id" style="display:block; margin-bottom:5px">テナントを選択</label>
+      <select id="tenant_id" name="tenant_id" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- テナントを選択してください --</option>
+        {% for tenant in tenant_list %}
+        <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <button type="submit" class="btn">ダッシュボードへ進む</button>
+  </form>
+
+  <h2 style="margin-top:30px">店舗選択</h2>
+  <p style="margin-top:10px; color:#666">店舗を選択して店舗管理者ダッシュボードにアクセスできます。</p>
+  <form method="POST" action="{{ url_for('tenant_admin.select_store_from_mypage') }}" style="margin-top:20px">
+    <div style="margin-bottom:15px">
+      <label for="store_id" style="display:block; margin-bottom:5px">店舗を選択</label>
+      <select id="store_id" name="store_id" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:3px">
+        <option value="">-- 店舗を選択してください --</option>
+        {% for store in store_list %}
+          <option value="{{ store.id }}">{{ store.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">店舗ダッシュボードへ進む</button>
+  </form>
+  
+  <div style="margin-top:20px">
+    <a class="btn" href="{{ url_for('auth.logout') }}" style="background-color:#dc3545">ログアウト</a>
+  </div>
+</div>
+
+{% if get_flashed_messages() %}
+<div style="margin-top:20px">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

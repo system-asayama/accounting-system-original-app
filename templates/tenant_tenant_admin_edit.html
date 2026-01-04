@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}テナント管理者編集{% endblock %}
+
+{% block content %}
+<h2>テナント管理者編集 ({{ tenant.名称 }} / {{ tenant.slug }})</h2>
+
+<form method="POST">
+    {% if get_csrf %}<input type="hidden" name="csrf_token" value="{{ get_csrf() }}">{% endif %}
+    
+    <div class="form-group">
+        <label for="login_id">ログインID:</label>
+        <input type="text" id="login_id" name="login_id" value="{{ admin.login_id }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="name">氏名:</label>
+        <input type="text" id="name" name="name" value="{{ admin.name }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="email">メールアドレス:</label>
+        <input type="email" id="email" name="email" value="{{ admin.email or '' }}" placeholder="例: admin@example.com">
+    </div>
+    
+    {% if is_owner_in_current_tenant %}
+    <div class="form-group">
+        <label for="role">役割</label>
+        <input type="text" value="テナント管理者（オーナー）" readonly style="background-color:#f5f5f5">
+        <input type="hidden" name="role" value="tenant_admin">
+        <small style="color:#666;margin-top:4px;display:block">※ オーナーは役割を変更できません</small>
+    </div>
+    {% else %}
+    <div class="form-group">
+        <label for="role">役割</label>
+        <select id="role" name="role" required>
+            <option value="tenant_admin" {% if admin.role == 'tenant_admin' or not admin.role %}selected{% endif %}>テナント管理者</option>
+            <option value="admin" {% if admin.role == 'admin' %}selected{% endif %}>店舗管理者</option>
+            <option value="employee" {% if admin.role == 'employee' %}selected{% endif %}>従業員</option>
+        </select>
+        <small style="color:#666;margin-top:4px;display:block">役割を変更すると、アクセス権限が変わります。</small>
+    </div>
+    {% endif %}
+    
+    <div class="form-group">
+        <label for="password">パスワード（変更する場合のみ入力）:</label>
+        <input type="password" id="password" name="password" minlength="8" placeholder="変更しない場合は空欄">
+    </div>
+    
+    <div class="form-group">
+        <label for="password_confirm">パスワード（確認）:</label>
+        <input type="password" id="password_confirm" name="password_confirm" minlength="8" placeholder="もう一度入力">
+    </div>
+    
+
+    {% if session.get('role') == 'system_admin' %}
+    <div class="form-group">
+        <label for="tenants">管理するテナント <span style="color:red">*</span></label>
+        {% if tenants %}
+          <table style="border-collapse:collapse;width:100%">
+            {% for tenant_item in tenants %}
+            <tr>
+              <td style="border:1px solid #ccc;padding:8px;text-align:center;width:40px">
+                <input type="checkbox" name="tenant_ids" value="{{ tenant_item.id }}" {% if tenant_item.id in admin_tenant_ids %}checked{% endif %}>
+              </td>
+              <td style="border:1px solid #ccc;padding:8px">
+                {{ tenant_item['名称'] }}
+                {% if owner_tenant_ids.get(tenant_item.id) %}
+                  <span style="color:#ff6f00;font-weight:bold;margin-left:8px">★ オーナー</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+        {% else %}
+          <p style="color:#999;margin:0">テナントが登録されていません。</p>
+        {% endif %}
+        <small style="color:#666">少なくとも1つのテナントを選択してください。</small>
+    </div>
+    {% endif %}
+    
+
+    <div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px">
+      <label style="display:flex;align-items:center;cursor:{% if is_owner_in_current_tenant %}not-allowed{% else %}pointer{% endif %};margin:0">
+        <input name="active" type="checkbox" value="1" 
+               {% if admin.active == 1 %}checked{% endif %}
+               {% if is_owner_in_current_tenant %}disabled{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">有効</span>
+      </label>
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        {% if is_owner_in_current_tenant %}
+        ※ オーナーは常に有効です
+        {% else %}
+        チェックを外すとこのテナント管理者は無効化されます。
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-radius:8px">
+      <label style="display:flex;align-items:center;cursor:{% if is_owner_in_current_tenant %}not-allowed{% else %}pointer{% endif %};margin:0">
+        <input name="can_manage_admins" type="checkbox" value="1"
+               {% if admin.can_manage_admins == 1 %}checked{% endif %}
+               {% if is_owner_in_current_tenant %}disabled{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">管理者管理権限</span>
+      </label>
+      <div class="small" style="color:#666;margin-top:4px;margin-left:28px">
+        {% if is_owner_in_current_tenant %}
+        ※ オーナーは常に管理者管理権限を持ちます
+        {% else %}
+        チェックを入れるとこのテナント管理者は他のテナント管理者を管理できるようになります。
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="form-actions">
+        <button type="submit" class="btn primary">更新</button>
+        <a href="{{ url_for('tenant_admin.tenant_admins') }}" class="btn">キャンセル</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}出納帳 - {% if item %}編集{% else %}新規登録{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>出納帳 - {% if item %}編集{% else %}新規登録{% endif %}</h2>
+    
+    <form method="POST" action="{{ url_for('cash_books.cash_book_create') if not item else url_for('cash_books.cash_book_edit', item_id=item.id) }}">
+        <div class="form-group">
+            <label for="transaction_date">取引日</label>
+            <input type="date" id="transaction_date" name="transaction_date" value="{{ item.transaction_date.strftime('%Y-%m-%d') if item else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="account_item_id">勘定科目</label>
+            <select id="account_item_id" name="account_item_id" required>
+                {% if item %}
+                <option value="{{ item.account_item_id }}" selected>{{ item.account_item.display_name }} ({{ item.account_item.major_category }})</option>
+                {% else %}
+                <option value="">勘定科目を選択してください</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="counterparty">取引先</label>
+            <input type="text" id="counterparty" name="counterparty" value="{{ item.counterparty if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="item_name">品目</label>
+            <input type="text" id="item_name" name="item_name" value="{{ item.item_name if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="amount_with_tax">金額（税込）</label>
+            <input type="number" id="amount_with_tax" name="amount_with_tax" value="{{ item.amount_with_tax if item else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="amount_without_tax">金額（税抜）</label>
+            <input type="number" id="amount_without_tax" name="amount_without_tax" value="{{ item.amount_without_tax if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="tax_amount">消費税額</label>
+            <input type="number" id="tax_amount" name="tax_amount" value="{{ item.tax_amount if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="tax_category_id">税区分</label>
+            <select id="tax_category_id" name="tax_category_id" required>
+                {% if item and item.tax_category %}
+                <option value="{{ item.tax_category.id }}" selected>{{ item.tax_category.name }}</option>
+                {% else %}
+                <option value="">税区分を選択してください</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tax_rate">税率</label>
+            <input type="text" id="tax_rate" name="tax_rate" value="{{ item.tax_rate if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="department">部門</label>
+            <input type="text" id="department" name="department" value="{{ item.department if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="memo_tag">メモタグ</label>
+            <input type="text" id="memo_tag" name="memo_tag" value="{{ item.memo_tag if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="payment_account">決済口座</label>
+            <input type="text" id="payment_account" name="payment_account" value="{{ item.payment_account if item else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="remarks">備考</label>
+            <textarea id="remarks" name="remarks">{{ item.remarks if item else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            {% if item %}更新{% else %}登録{% endif %}
+        </button>
+        <a href="{{ url_for('cash_books.cash_books_list') }}" class="btn btn-secondary">キャンセル</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tom Selectの初期化
+    new TomSelect("#account_item_id", {
+        valueField: 'id',
+        labelField: 'display_name',
+        searchField: ['display_name', 'account_name', 'major_category'],
+        options: [],
+        load: function(query, callback) {
+            var url = '{{ url_for("account_items.get_all_account_items") }}';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 勘定科目名と大分類を結合した表示名を作成
+                        const options = data.account_items.map(item => ({
+                            id: item.id,
+                            account_name: item.account_name,
+                            display_name: `${item.account_name} (${item.major_category})`,
+                            major_category: item.major_category
+                        }));
+                        callback(options);
+                    } else {
+                        console.error('勘定科目データの取得に失敗しました:', data.message);
+                        callback();
+                    }
+                })
+                .catch(error => {
+                    console.error('勘定科目データの取得中にエラーが発生しました:', error);
+                    callback();
+                });
+        },
+        render: {
+            option: function(item, escape) {
+                return `<div>
+                    <span class="name">${escape(item.account_name)}</span>
+                    <span class="major-category">(${escape(item.major_category)})</span>
+                </div>`;
+            },
+            item: function(item, escape) {
+                return `<div>${escape(item.account_name)} (${escape(item.major_category)})</div>`;
+            }
+        },
+        // 既存の選択肢がある場合は、ロード後にそれを選択状態にする
+        onInitialize: function() {
+            {% if item %}
+            var self = this;
+            // 編集時は、現在の選択肢をオプションに追加してから選択
+            var currentItem = {
+                id: {{ item.account_item_id }},
+                account_name: '{{ item.account_item.account_name }}',
+                display_name: '{{ item.account_item.display_name }} ({{ item.account_item.major_category }})',
+                major_category: '{{ item.account_item.major_category }}'
+            };
+            self.addOption(currentItem);
+            self.setValue({{ item.account_item_id }});
+            {% endif %}
+        }
+    });
+
+    // 税区分のTom Select初期化
+    new TomSelect("#tax_category_id", {
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['name'],
+        options: [],
+        load: function(query, callback) {
+            var url = '{{ url_for("tax_categories.get_all_tax_categories") }}';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        callback(data.tax_categories);
+                    } else {
+                        console.error('税区分データの取得に失敗しました:', data.message);
+                        callback();
+                    }
+                })
+                .catch(error => {
+                    console.error('税区分データの取得中にエラーが発生しました:', error);
+                    callback();
+                });
+        },
+        onInitialize: function() {
+            {% if item and item.tax_category %}
+            var self = this;
+            var currentItem = {
+                id: {{ item.tax_category.id }},
+                name: '{{ item.tax_category.name }}'
+            };
+            self.addOption(currentItem);
+            self.setValue({{ item.tax_category.id }});
+            {% endif %}
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Tom Selectのスタイル調整 */
+.ts-wrapper.full {
+    width: 100%;
+}
+
+.ts-dropdown .option .major-category {
+    font-size: 0.8em;
+    color: #999;
+    margin-left: 0.5em;
+}
+</style>
+{% endblock %}

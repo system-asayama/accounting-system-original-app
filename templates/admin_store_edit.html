@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}店舗編集{% endblock %}
+{% block content %}
+{% if tenant %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 }}</div>
+  {% if store %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">店舗編集</h1>
+</div>
+{% else %}
+<h1>店舗編集</h1>
+{% endif %}
+
+<div class="card" style="max-width:600px">
+  <form method="post">
+    {% if get_csrf %}<input type="hidden" name="csrf_token" value="{{ get_csrf() }}">{% endif %}
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">名称 <span style="color:red">*</span></label>
+      <input type="text" name="name" value="{{ store['名称'] }}" required autofocus style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">Slug <span style="color:red">*</span></label>
+      <input type="text" name="slug" value="{{ store.slug }}" required style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">郵便番号</label>
+      <input type="text" name="postal_code" value="{{ store.郵便番号 or '' }}" placeholder="123-4567" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">住所</label>
+      <input type="text" name="address" value="{{ store.住所 or '' }}" placeholder="東京都渋谷区..." style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">電話番号</label>
+      <input type="tel" name="phone" value="{{ store.電話番号 or '' }}" placeholder="03-1234-5678" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">e-mailアドレス</label>
+      <input type="email" name="email" value="{{ store.email or '' }}" placeholder="store@example.com" style="width:100%;padding:8px">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">OpenAI APIキー</label>
+      <input type="password" name="openai_api_key" value="{{ store.openai_api_key or '' }}" placeholder="sk-..." style="width:100%;padding:8px">
+      <p style="font-size:12px;color:#666;margin-top:4px">この店舗配下のアプリに適用されます。未設定の場合はテナント設定のキーが使用されます。</p>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:4px">有効/無効</label>
+      <select name="active" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:1em">
+        <option value="1" {% if store.有効 == 1 %}selected{% endif %}>有効</option>
+        <option value="0" {% if store.有効 == 0 %}selected{% endif %}>無効</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn" type="submit">更新</button>
+      <a class="btn sub" href="{{ url_for('admin.store_info') }}">キャンセル</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

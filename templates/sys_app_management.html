@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}アプリ管理{% endblock %}
+{% block content %}
+<h1>アプリ管理</h1>
+
+<div class="card" style="max-width:640px; margin-bottom:20px">
+  <h2>テナント別アプリ設定</h2>
+  <p>テナント単位でアプリの使用可否を設定します。</p>
+  <a href="{{ url_for('system_admin.app_management_tenant') }}" class="btn">テナント別設定を開く</a>
+</div>
+
+<div class="card" style="max-width:640px">
+  <h2>店舗別アプリ設定</h2>
+  <p>店舗単位でアプリの使用可否を設定します。</p>
+  <a href="{{ url_for('system_admin.app_management_store') }}" class="btn">店舗別設定を開く</a>
+</div>
+
+<a href="{{ url_for('system_admin.dashboard') }}" class="btn" style="margin-top:20px">ダッシュボードに戻る</a>
+{% endblock %}

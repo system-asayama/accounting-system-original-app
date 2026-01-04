@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}データインポート - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .import-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #34495e;
+        padding-bottom: 0.5rem;
+    }
+    
+    .upload-area {
+        border: 2px dashed #3498db;
+        border-radius: 4px;
+        padding: 2rem;
+        text-align: center;
+        background-color: #ecf0f1;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+        background-color: #d5dbdb;
+        border-color: #2980b9;
+    }
+    
+    .upload-area input[type="file"] {
+        display: none;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-text {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    
+    .upload-hint {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+    
+    .template-list {
+        margin-top: 2rem;
+    }
+    
+    .template-item {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .template-info h4 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    
+    .template-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+    
+    .template-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-use {
+        background-color: #27ae60;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .btn-use:hover {
+        background-color: #229954;
+    }
+    
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #0c5460;
+    }
+    
+    .info-box h4 {
+        margin-top: 0;
+    }
+    
+    .info-box ul {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <h2>データインポート</h2>
+    
+    <!-- アップロードセクション -->
+    <div class="import-section">
+        <h3 class="section-title">1. ファイルをアップロード</h3>
+        
+        <div class="info-box">
+            <h4>対応ファイル形式</h4>
+            <ul>
+                <li><strong>CSV</strong>: カンマ区切りテキストファイル</li>
+                <li><strong>Excel</strong>: .xlsx, .xls形式</li>
+            </ul>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">ファイルをドラッグ&ドロップまたはクリック</div>
+                <div class="upload-hint">CSV または Excel ファイルを選択してください</div>
+                <input type="file" id="fileInput" name="file" accept=".csv,.xlsx,.xls" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; width: 100%; padding: 0.75rem;">
+                アップロードしてプレビュー
+            </button>
+        </form>
+    </div>
+    
+    <!-- テンプレートセクション -->
+    {% if templates %}
+    <div class="import-section">
+        <h3 class="section-title">2. 保存済みテンプレートを使用</h3>
+        
+        <p style="color: #7f8c8d; margin-bottom: 1.5rem;">
+            以前に設定したマッピング情報を使用して、すぐにインポートできます。
+        </p>
+        
+        <div class="template-list">
+            {% for template in templates %}
+                <div class="template-item">
+                    <div class="template-info">
+                        <h4>{{ template.name }}</h4>
+                        <p>ファイル形式: {{ template.file_type | upper }} | スキップ行: {{ template.skip_rows }}</p>
+                    </div>
+                    <div class="template-actions">
+                        <a href="#" class="btn-use" onclick="useTemplate({{ template.id }}, '{{ template.name }}')">
+                            このテンプレートを使用
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <p style="text-align: center; margin-top: 1.5rem;">
+            <a href="{{ url_for('import_data.import_templates_list') }}" class="btn btn-secondary">
+                テンプレート管理
+            </a>
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- 説明セクション -->
+    <div class="import-section">
+        <h3 class="section-title">インポートの流れ</h3>
+        
+        <ol style="line-height: 1.8;">
+            <li><strong>ファイルをアップロード</strong>: CSV または Excel ファイルを選択します</li>
+            <li><strong>プレビュー表示</strong>: ファイルの内容が表示されます</li>
+            <li><strong>マッピング設定</strong>: どの列が「取引日」「金額」かを指定します</li>
+            <li><strong>テンプレート保存（オプション）</strong>: マッピング設定を保存して、次回以降は自動適用できます</li>
+            <li><strong>インポート実行</strong>: 出納帳にデータが投入されます</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ドラッグ&ドロップ対応
+const uploadArea = document.querySelector('.upload-area');
+const fileInput = document.getElementById('fileInput');
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.backgroundColor = '#d5dbdb';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.backgroundColor = '#ecf0f1';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        // ファイル名を表示
+        const fileName = files[0].name;
+        console.log('Selected file:', fileName);
+    }
+});
+
+function useTemplate(templateId, templateName) {
+    alert('テンプレート「' + templateName + '」を使用する機能は実装予定です');
+    // TODO: テンプレートを使用してインポートを実行
+}
+</script>
+{% endblock %}

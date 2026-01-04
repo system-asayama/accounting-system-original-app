@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}システム管理者編集{% endblock %}
+{% block content %}
+<h2>システム管理者編集</h2>
+
+<div class="card" style="max-width:640px">
+  <form method="post" autocomplete="off">
+    <label>ログインID</label>
+    <input name="login_id" type="text" required 
+           value="{{ admin.login_id }}"
+           autocomplete="off">
+
+    <label style="margin-top:16px">氏名</label>
+    <input name="name" type="text" required 
+           value="{{ admin.name }}"
+           autocomplete="off">
+
+    <label style="margin-top:16px">メールアドレス</label>
+    <input name="email" type="email" 
+           value="{{ admin.email or '' }}"
+           placeholder="例: admin@example.com"
+           autocomplete="off">
+    <div class="small" style="color:#666;margin-top:4px">
+      連絡先や通知用のメールアドレスです。
+    </div>
+
+    <label style="margin-top:16px">新しいパスワード（変更する場合のみ）</label>
+    <input name="password" type="password" 
+           minlength="8"
+           placeholder="変更しない場合は空欄"
+           autocomplete="new-password">
+    <div class="small" style="color:#666;margin-top:4px">
+      パスワードを変更する場合は8文字以上で入力してください。変更しない場合は空欄のままにしてください。
+    </div>
+
+    <label style="margin-top:16px">パスワード（確認）</label>
+    <input name="password_confirm" type="password" 
+           minlength="8"
+           placeholder="もう一度入力"
+           autocomplete="new-password">
+    <div class="small" style="color:#666;margin-top:4px">
+      パスワードを変更する場合は、上記と同じパスワードを入力してください。
+    </div>
+
+    <div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px">
+      <label style="display:flex;align-items:center;cursor:{% if admin.is_owner == 1 %}not-allowed{% else %}pointer{% endif %};margin:0">
+        <input name="active" type="checkbox" value="1" 
+               {% if admin.active == 1 or admin.is_owner == 1 %}checked{% endif %}
+               {% if admin.is_owner == 1 %}disabled{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">有効</span>
+      </label>
+      {% if admin.is_owner == 1 %}
+        <div class="small" style="color:#666;margin-top:4px">
+          ※ オーナーは常に有効です
+        </div>
+        <input name="active" type="hidden" value="1">
+      {% endif %}
+    </div>
+
+    <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-radius:8px">
+      <label style="display:flex;align-items:center;cursor:{% if admin.is_owner == 1 %}not-allowed{% else %}pointer{% endif %};margin:0">
+        <input name="can_manage_admins" type="checkbox" value="1" 
+               {% if admin.can_manage_admins == 1 or admin.is_owner == 1 %}checked{% endif %}
+               {% if admin.is_owner == 1 %}disabled{% endif %}
+               style="width:auto;margin-right:8px">
+        <span style="font-weight:normal">管理者管理権限</span>
+      </label>
+      {% if admin.is_owner == 1 %}
+        <div class="small" style="color:#666;margin-top:4px">
+          ※ オーナーは常に管理者管理権限を持ちます
+        </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top:24px;display:flex;gap:8px">
+      <button class="btn" type="submit">更新する</button>
+      <a class="btn sub" href="{{ url_for('system_admin.system_admins') }}">キャンセル</a>
+    </div>
+  </form>
+</div>
+
+{% if get_flashed_messages() %}
+<div style="margin-top:20px;max-width:640px">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}" style="padding:12px;margin-bottom:8px;border-radius:4px;
+         {% if category == 'success' %}background:#d4edda;color:#155724;border:1px solid #c3e6cb{% endif %}
+         {% if category == 'error' %}background:#f8d7da;color:#721c24;border:1px solid #f5c6cb{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

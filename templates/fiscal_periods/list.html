@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}会計期間一覧 - 会計システム{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home.masters_index') }}">マスター管理</a></li>
+        <li class="breadcrumb-item active" aria-current="page">会計期間</li>
+    </ol>
+</nav>
+
+<h2>会計期間一覧</h2>
+
+<form method="GET" action="{{ url_for('fiscal_periods.fiscal_periods_list') }}" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="会計期間名を検索" value="{{ search_query }}">
+        <button class="btn btn-primary" type="submit">検索</button>
+    </div>
+</form>
+
+<a href="{{ url_for('fiscal_periods.fiscal_period_new') }}" class="btn btn-success mb-3">新規作成</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>会計期間名</th>
+            <th>開始日</th>
+            <th>終了日</th>
+            <th>事業種別</th>
+            <th>ステータス</th>
+            <th>備考</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if fiscal_periods %}
+            {% for period in fiscal_periods %}
+            <tr>
+                <td>{{ period.id }}</td>
+                <td>{{ period.name }}</td>
+                <td>{{ period.start_date }}</td>
+                <td>{{ period.end_date }}</td>
+                <td>
+                    {% if period.business_type == 'individual' %}
+                    個人
+                    {% else %}
+                    法人
+                    {% endif %}
+                </td>
+                <td>
+                    {% if period.status == 'open' %}
+                    <span class="badge bg-success">進行中</span>
+                    {% else %}
+                    <span class="badge bg-secondary">締め済み</span>
+                    {% endif %}
+                </td>
+                <td>{{ period.notes or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('fiscal_periods.fiscal_period_edit', fiscal_period_id=period.id) }}" class="btn btn-sm btn-primary">編集</a>
+                    {% if period.status == 'open' %}
+                    <button class="btn btn-sm btn-warning" onclick="closeFiscalPeriod({{ period.id }}, '{{ period.name }}')">締める</button>
+                    {% endif %}
+                    <button class="btn btn-sm btn-danger" onclick="deleteFiscalPeriod({{ period.id }}, '{{ period.name }}')">削除</button>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="8" class="text-center">会計期間がまだ登録されていません</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+function deleteFiscalPeriod(id, name) {
+    if (confirm('会計期間「' + name + '」を削除してもよろしいですか？')) {
+        fetch('/api/fiscal-periods/' + id + '/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('エラーが発生しました: ' + error);
+        });
+    }
+}
+
+function closeFiscalPeriod(id, name) {
+    if (confirm('会計期間「' + name + '」を締めてもよろしいですか？\n締めた後は編集できなくなります。')) {
+        fetch('/api/fiscal-periods/' + id + '/close', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('エラーが発生しました: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

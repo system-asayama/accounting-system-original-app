@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}従業員新規作成{% endblock %}
+{% block content %}
+{% if tenant %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 }}</div>
+  {% if store %}
+  <div style="font-size:1.1em;font-weight:bold;color:#888;margin-top:4px">{{ store.名称 }}</div>
+  {% endif %}
+  <h1 style="margin-top:12px">従業員新規作成</h1>
+</div>
+{% else %}
+<h1>従業員新規作成</h1>
+{% endif %}
+
+<form method="post">
+  <div class="card" style="max-width:500px">
+    <div class="row">
+      <label for="login_id">ログインID</label>
+      <input id="login_id" name="login_id" type="text" required autofocus>
+    </div>
+    
+    <div class="row">
+      <label for="name">氏名</label>
+      <input id="name" name="name" type="text" required>
+    </div>
+    
+    <div class="row">
+      <label for="email">メールアドレス</label>
+      <input id="email" name="email" type="email" required>
+    </div>
+    
+    <div class="row">
+      <label for="password">パスワード</label>
+      <input id="password" name="password" type="password" required minlength="8" placeholder="8文字以上">
+    </div>
+    
+    <div class="row">
+      <label for="password_confirm">パスワード（確認）</label>
+      <input id="password_confirm" name="password_confirm" type="password" required minlength="8" placeholder="もう一度入力">
+    </div>
+    
+    <div class="row">
+      <label style="font-weight:bold">勤務する店舗（複数選択可）</label>
+      {% if stores %}
+        <div style="max-height:200px;overflow-y:auto">
+          {% for store in stores %}
+          {% if from_store_id and store.id == from_store_id %}
+          <div style="border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;background:#f5f5f5;cursor:not-allowed;opacity:0.7">
+            <label style="display:flex;align-items:center;cursor:not-allowed;margin:0">
+              <input type="checkbox" name="store_ids" value="{{ store.id }}" checked disabled style="margin:0 12px 0 0;width:18px;height:18px;flex-shrink:0">
+              <span style="flex:1">{{ store.名称 }} <small style="color:#666">(作成元)</small></span>
+            </label>
+            <input type="hidden" name="store_ids" value="{{ store.id }}">
+          </div>
+          {% else %}
+          <div style="border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;background:white;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='#f9f9f9';this.style.borderColor='#999'" onmouseout="this.style.background='white';this.style.borderColor='#ddd'">
+            <label style="display:flex;align-items:center;cursor:pointer;margin:0">
+              <input type="checkbox" name="store_ids" value="{{ store.id }}" style="margin:0 12px 0 0;width:18px;height:18px;flex-shrink:0">
+              <span style="flex:1">{{ store.名称 }}</span>
+            </label>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color:#999">あなたが管理する店舗がありません。</p>
+      {% endif %}
+    </div>
+    
+    <div class="actions" style="margin-top:20px; display:flex; gap:10px">
+      <button class="btn" type="submit" {% if not stores %}disabled{% endif %}>作成</button>
+      <a class="btn sub" href="{{ back_url }}">キャンセル</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}利用可能アプリ一覧{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant.名称 if tenant else 'テナント名' }}</div>
+  <h1 style="margin-top:12px">利用可能アプリ一覧</h1>
+</div>
+
+<div class="card">
+  <h2>{{ tenant.名称 if tenant else 'テナント名' }} で利用可能なアプリ</h2>
+  
+  {% if apps and apps|length > 0 %}
+    <div style="margin-top:20px">
+      {% for app in apps %}
+      <div class="card" style="margin-bottom:16px">
+        <a href="{{ app.url }}" style="text-decoration:none;color:inherit;display:block">
+          <h3 style="color:#6B46C1;margin-bottom:8px">{{ app.name }}</h3>
+          <p style="color:#666;margin:0">{{ app.description or '利用可能なアプリの一覧を表示' }}</p>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color:#999;margin-top:20px">利用可能なアプリはありません</p>
+  {% endif %}
+
+  <div style="margin-top:20px">
+    <a class="btn sub" href="{{ url_for('tenant_admin.dashboard') }}">ダッシュボードに戻る</a>
+  </div>
+</div>
+{% endblock %}

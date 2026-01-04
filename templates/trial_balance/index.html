@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}試算表 - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .period-selector {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .period-selector label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .period-selector select {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-width: 260px;
+    }
+
+    /* ----- タブ ----- */
+    .tb-tabs {
+        list-style: none;
+        padding-left: 0;
+        margin: 0 0 0.75rem 0;
+        border-bottom: 2px solid #dee2e6;
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .tb-tabs li {
+        margin: 0;
+    }
+
+    .tb-tab-link {
+        border: none;
+        background-color: transparent;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        font-weight: 600;
+        color: #6c757d;
+        border-radius: 4px 4px 0 0;
+        border: 1px solid transparent;
+        border-bottom: 2px solid transparent;
+    }
+
+    .tb-tab-link:hover {
+        color: #3498db;
+    }
+
+    .tb-tab-link.active {
+        color: #343a40;
+        background-color: #ffffff;
+        border-color: #dee2e6 #dee2e6 #ffffff;
+        border-bottom-color: #ffffff;
+    }
+
+    .tb-tab-pane {
+        display: none;
+    }
+    .tb-tab-pane.active {
+        display: block;
+    }
+
+    /* ----- テーブル共通 ----- */
+    .table-container {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+    }
+
+    table.tb-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .tb-table thead {
+        background-color: #34495e;
+        color: white;
+    }
+
+    .tb-table th,
+    .tb-table td {
+        padding: 0.6rem 0.5rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .tb-table th.text-left {
+        text-align: left;
+    }
+
+    .tb-table td.amount {
+        text-align: right;
+        font-family: monospace;
+    }
+
+    .tb-table tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .tb-total-row {
+        background-color: #ecf0f1;
+        font-weight: 600;
+    }
+
+    .tb-total-row td {
+        border-top: 2px solid #34495e;
+    }
+    
+    .tb-subtotal-row {
+        background-color: #ffffff;
+        font-weight: 600;
+        border-top: 1px solid #000;
+    }
+    
+    .tb-subtotal-double-border {
+        border-bottom: 3px double #000 !important;
+    }
+    
+    .tb-subtotal-double-border td {
+        border-bottom: 3px double #000;
+        font-weight: 700;
+    }
+
+    .tb-level-major {
+        background-color: #f3f6f9;
+        font-weight: 700;
+    }
+    .tb-level-mid {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .tb-level-sub {
+        background-color: #f5f5f5;
+        font-weight: 600;
+    }
+    .tb-level-account {
+        background-color: #ffffff;
+    }
+
+    .balance-debit {
+        color: #27ae60;
+    }
+
+    .balance-credit {
+        color: #e74c3c;
+    }
+
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #7f8c8d;
+        background-color: #ecf0f1;
+        border-radius: 4px;
+        margin: 2rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>試算表</h1>
+
+<!-- 会計期間選択 -->
+<div class="period-selector">
+    <form method="GET" action="{{ url_for('reports.trial_balance') }}">
+        <label for="fiscal_period_id">会計期間:</label>
+        <select name="fiscal_period_id" id="fiscal_period_id" onchange="this.form.submit()">
+            {% if not fiscal_periods %}
+                <option value="">会計期間が登録されていません</option>
+            {% else %}
+                {% for period in fiscal_periods %}
+                    <option value="{{ period.id }}" {% if period.id == selected_period_id %}selected{% endif %}>
+                        {{ period.name }} ({{ period.start_date }} 〜 {{ period.end_date }})
+                    </option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </form>
+</div>
+
+{% if bs_data or pl_data %}
+    <!-- タブ -->
+    <ul class="tb-tabs" id="tbTabs">
+        <li>
+            <button type="button" class="tb-tab-link active" data-target="bs">貸借対照表（B/S）</button>
+        </li>
+        <li>
+            <button type="button" class="tb-tab-link" data-target="pl">損益計算書（P/L）</button>
+        </li>
+    </ul>
+
+    <!-- ====== 貸借対照表（B/S）タブ ====== -->
+    <div id="tab-bs" class="tb-tab-pane active">
+        <div class="table-container">
+            <table class="tb-table">
+                <thead>
+                    <tr>
+                        <th class="text-left" style="width: 40%;">勘定科目（大分類 → 中分類 → 小分類 → 科目）</th>
+                        <th style="width: 15%;">期首残高</th>
+                        <th style="width: 15%;">借方</th>
+                        <th style="width: 15%;">貸方</th>
+                        <th style="width: 15%;">期末残高</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(major='', mid='', sub='', prev_major='', prev_mid='', prev_sub='') %}
+                    {% for row in bs_data %}
+                        {% set ai = row.account_item %}
+                        {% set major = ai.major_category or 'その他' %}
+                        {% set mid = ai.mid_category or 'その他' %}
+                        {% set sub = ai.sub_category or 'その他' %}
+                        
+                        {# 小分類が変わるとき、前の小分類計を表示 #}
+                        {% if ns.prev_sub and ns.sub != sub %}
+                            {% set sub_key = ns.prev_major + '_' + ns.prev_mid + '_' + ns.prev_sub %}
+                            {% if bs_subtotals.get(sub_key) %}
+                            <tr class="tb-subtotal-row">
+                                <td>　{{ ns.prev_sub }}計</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['opening']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['debit']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['credit']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['closing']|abs|int) }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {# 中分類が変わるとき、前の中分類計を表示 #}
+                        {% if ns.prev_mid and ns.mid != mid %}
+                            {% set mid_key = ns.prev_major + '_' + ns.prev_mid %}
+                            {% if bs_subtotals.get(mid_key) %}
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>{{ ns.prev_mid }}合計</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['opening']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['debit']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['credit']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['closing']|abs|int) }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endif %}
+
+                        {# --- 大分類行 --- #}
+                        {% if ns.major != major %}
+                            <tr class="tb-level-major">
+                                <td>{{ major }}</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                            </tr>
+                            {% set ns.major = major %}
+                            {% set ns.mid = '' %}
+                            {% set ns.sub = '' %}
+                        {% endif %}
+
+                        {# --- 中分類行 --- #}
+                        {% if ns.mid != mid %}
+                            <tr class="tb-level-mid">
+                                <td>▼{{ mid }}</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                            </tr>
+                            {% set ns.mid = mid %}
+                            {% set ns.sub = '' %}
+                        {% endif %}
+
+                        {# --- 小分類行 --- #}
+                        {% if ns.sub != sub %}
+                            <tr class="tb-level-sub">
+                                <td>　▼{{ sub }}</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                                <td class="amount">-</td>
+                            </tr>
+                            {% set ns.sub = sub %}
+                        {% endif %}
+
+                        {# --- 科目行 --- #}
+                        <tr class="tb-level-account">
+                            <td>　　▶{{ ai.account_name }}</td>
+                            <td class="amount">
+                                {% if row.opening_balance is not none %}
+                                    {% if row.opening_balance >= 0 %}
+                                        {{ "{:,}".format(row.opening_balance) }}
+                                    {% else %}
+                                        <span class="balance-credit">{{ "{:,}".format(row.opening_balance) }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="amount">
+                                {{ "{:,}".format(row.current_debit) if row.current_debit else 0|int }}
+                            </td>
+                            <td class="amount">
+                                {{ "{:,}".format(row.current_credit) if row.current_credit else 0|int }}
+                            </td>
+                            <td class="amount">
+                                {% if row.closing_balance >= 0 %}
+                                    <span class="balance-debit">{{ "{:,}".format(row.closing_balance) }}</span>
+                                {% else %}
+                                    <span class="balance-credit">{{ "{:,}".format(row.closing_balance) }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        
+                        {# 前の値を保存 #}
+                        {% set ns.prev_major = major %}
+                        {% set ns.prev_mid = mid %}
+                        {% set ns.prev_sub = sub %}
+                    {% endfor %}
+                    
+                    {# 最後の小分類計と中分類計を表示 #}
+                    {% if ns.prev_sub %}
+                        {% set sub_key = ns.prev_major + '_' + ns.prev_mid + '_' + ns.prev_sub %}
+                        {% if bs_subtotals.get(sub_key) %}
+                        <tr class="tb-subtotal-row">
+                            <td>　{{ ns.prev_sub }}計</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['opening']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['debit']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['credit']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[sub_key]['closing']|abs|int) }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if ns.prev_mid %}
+                        {% set mid_key = ns.prev_major + '_' + ns.prev_mid %}
+                        {% if bs_subtotals.get(mid_key) %}
+                        <tr class="tb-subtotal-row tb-subtotal-double-border">
+                            <td>{{ ns.prev_mid }}合計</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['opening']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['debit']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['credit']|abs|int) }}</td>
+                            <td class="amount">{{ "{:,}".format(bs_subtotals[mid_key]['closing']|abs|int) }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr class="tb-total-row">
+                        <td>合計</td>
+                        <td class="amount">-</td>
+                        <td class="amount">{{ "{:,}".format(bs_debit_total) }}</td>
+                        <td class="amount">{{ "{:,}".format(bs_credit_total) }}</td>
+                        <td class="amount">-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ====== 損益計算書（P/L）タブ ====== -->
+    <div id="tab-pl" class="tb-tab-pane">
+        <div class="table-container">
+            <table class="tb-table">
+                <thead>
+                    <tr>
+                        <th class="text-left" style="width: 40%;">勘定科目（小分類 → 勘定科目）</th>
+                        <th style="width: 20%;">借方金額</th>
+                        <th style="width: 20%;">貸方金額</th>
+                        <th style="width: 20%;">当期金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# pl_mid_tree: { 中分類名: { 小分類名: { total_debit, total_credit, total_closing, accounts: {id: {...}} } } } #}
+                    {% for mid_name, mid_info in pl_mid_tree.items() %}
+                        {# --- 中分類見出し --- #}
+                        <tr class="tb-level-mid">
+                            <td>▼{{ mid_name }}</td>
+                            <td class="amount"></td>
+                            <td class="amount"></td>
+                            <td class="amount"></td>
+                        </tr>
+                        
+                        {% for sub_name, info in mid_info.items() %}
+                        {# --- 小分類行（必ず表示） --- #}
+                        <tr class="tb-level-sub">
+                            <td>　▼{{ sub_name }}</td>
+                            <td class="amount">
+                                {{ "{:,}".format(info.total_debit) if info.total_debit else 0|int }}
+                            </td>
+                            <td class="amount">
+                                {{ "{:,}".format(info.total_credit) if info.total_credit else 0|int }}
+                            </td>
+                            <td class="amount">
+                                {% if info.total_closing >= 0 %}
+                                    <span class="balance-debit">
+                                        {{ "{:,}".format(info.total_closing) if info.total_closing else 0|int }}
+                                    </span>
+                                {% else %}
+                                    <span class="balance-credit">
+                                        {{ "{:,}".format(info.total_closing) }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        {# --- 小分類配下の勘定科目行 --- #}
+                        {% for acc in info.accounts.values() %}
+                            {% set ai = acc.account_item %}
+                            <tr class="tb-level-account">
+                                <td>　　▶{{ ai.account_name }}</td>
+                                <td class="amount">
+                                    {{ "{:,}".format(acc.current_debit) if acc.current_debit else 0|int }}
+                                </td>
+                                <td class="amount">
+                                    {{ "{:,}".format(acc.current_credit) if acc.current_credit else 0|int }}
+                                </td>
+                                <td class="amount">
+                                    {% if acc.closing_balance >= 0 %}
+                                        <span class="balance-debit">
+                                            {{ "{:,}".format(acc.closing_balance) if acc.closing_balance else 0|int }}
+                                        </span>
+                                    {% else %}
+                                        <span class="balance-credit">
+                                            {{ "{:,}".format(acc.closing_balance) }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        
+                        {# --- 集計行 --- #}
+                        {% if sub_name == '売上高' %}
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>売上高計</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上高計']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上高計']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '売上原価' or sub_name == '期末商品棚卸' %}
+                            {% if sub_name == '期末商品棚卸' %}
+                            <tr class="tb-subtotal-row">
+                                <td>売上原価計</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上原価計']|abs|int) }}</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上原価計']|abs|int) }}</td>
+                            </tr>
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>売上総利益</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上総利益']|abs|int) if pl_subtotals['売上総利益'] < 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上総利益']|abs|int) if pl_subtotals['売上総利益'] >= 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['売上総利益']|abs|int) }}</td>
+                            </tr>
+                            {% endif %}
+                        {% elif sub_name == '販売費及び一般管理費' or sub_name == '販売管理費' or sub_name == '一般管理費' %}
+                            <tr class="tb-subtotal-row">
+                                <td>販売管理費計</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['販売管理費計']|abs|int) }}</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['販売管理費計']|abs|int) }}</td>
+                            </tr>
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>営業利益</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業利益']|abs|int) if pl_subtotals['営業利益'] < 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業利益']|abs|int) if pl_subtotals['営業利益'] >= 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業利益']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '営業外収益' %}
+                            <tr class="tb-subtotal-row">
+                                <td>営業外収益計</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業外収益計']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業外収益計']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '営業外費用' %}
+                            <tr class="tb-subtotal-row">
+                                <td>営業外費用計</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業外費用計']|abs|int) }}</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['営業外費用計']|abs|int) }}</td>
+                            </tr>
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>経常利益</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['経常利益']|abs|int) if pl_subtotals['経常利益'] < 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['経常利益']|abs|int) if pl_subtotals['経常利益'] >= 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['経常利益']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '特別利益' %}
+                            <tr class="tb-subtotal-row">
+                                <td>特別利益計</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['特別利益計']|abs|int) }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['特別利益計']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '特別損失' %}
+                            <tr class="tb-subtotal-row">
+                                <td>特別損失計</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['特別損失計']|abs|int) }}</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['特別損失計']|abs|int) }}</td>
+                            </tr>
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>税引前当期純利益</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['税引前当期純利益']|abs|int) if pl_subtotals['税引前当期純利益'] < 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['税引前当期純利益']|abs|int) if pl_subtotals['税引前当期純利益'] >= 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['税引前当期純利益']|abs|int) }}</td>
+                            </tr>
+                        {% elif sub_name == '法人税等' or sub_name == '法人税等調整額' %}
+                            {% if sub_name == '法人税等調整額' or (sub_name == '法人税等' and '法人税等調整額' not in pl_tree) %}
+                            <tr class="tb-subtotal-row">
+                                <td>法人税等計</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['法人税等計']|abs|int) }}</td>
+                                <td class="amount">0</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['法人税等計']|abs|int) }}</td>
+                            </tr>
+                            <tr class="tb-subtotal-row tb-subtotal-double-border">
+                                <td>当期純利益</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['当期純利益']|abs|int) if pl_subtotals['当期純利益'] < 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['当期純利益']|abs|int) if pl_subtotals['当期純利益'] >= 0 else 0 }}</td>
+                                <td class="amount">{{ "{:,}".format(pl_subtotals['当期純利益']|abs|int) }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="tb-total-row">
+                        <td>合計</td>
+                        <td class="amount">{{ "{:,}".format(pl_debit_total) }}</td>
+                        <td class="amount">{{ "{:,}".format(pl_credit_total) }}</td>
+                        <td class="amount">-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="no-data">
+        {% if fiscal_periods %}
+            <p>選択された会計期間に仕訳データがありません。</p>
+            <p>振替伝票または出納帳を入力してください。</p>
+        {% else %}
+            <p>会計期間が登録されていません。</p>
+            <p>まず会計期間を登録してください。</p>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const links = document.querySelectorAll('.tb-tab-link');
+    const panes = {
+        bs: document.getElementById('tab-bs'),
+        pl: document.getElementById('tab-pl'),
+    };
+
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            const target = link.dataset.target;
+            // タブの active 切り替え
+            links.forEach(l => l.classList.remove('active'));
+            Object.values(panes).forEach(p => p.classList.remove('active'));
+
+            link.classList.add('active');
+            panes[target].classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

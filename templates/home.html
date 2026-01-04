@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}ホーム - 会計システム{% endblock %}
+
+{% block extra_css %}
+<style>
+    .home-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .welcome-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .welcome-section h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+    }
+    
+    .welcome-section p {
+        margin: 0;
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+    
+    .stats-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #667eea;
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin: 0.5rem 0;
+    }
+    
+    .stat-card.account-items {
+        border-left-color: #667eea;
+    }
+    
+    .stat-card.cash-books {
+        border-left-color: #764ba2;
+    }
+    
+    .stat-card.import {
+        border-left-color: #f093fb;
+    }
+    
+    .features-section {
+        margin-bottom: 2rem;
+    }
+    
+    .features-section h3 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 0.5rem;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .feature-card {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .feature-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feature-header h4 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .feature-body {
+        padding: 1.5rem;
+    }
+    
+    .feature-body p {
+        margin: 0 0 1rem 0;
+        color: #7f8c8d;
+        line-height: 1.6;
+    }
+    
+    .feature-body a {
+        display: inline-block;
+        background-color: #667eea;
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feature-body a:hover {
+        background-color: #764ba2;
+    }
+    
+    .feature-body a.secondary {
+        background-color: #95a5a6;
+    }
+    
+    .feature-body a.secondary:hover {
+        background-color: #7f8c8d;
+    }
+    
+    .quick-actions {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .quick-actions h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 0.5rem;
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background-color: #f9f9f9;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #2c3e50;
+        transition: all 0.3s;
+        text-align: center;
+    }
+    
+    .action-btn:hover {
+        border-color: #667eea;
+        background-color: #f5f7ff;
+        color: #667eea;
+    }
+    
+    .action-btn-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .action-btn-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <!-- ウェルカムセクション -->
+    <div class="welcome-section">
+        <h2>会計システムへようこそ</h2>
+        <p>銀行口座やクレジットカードの明細を簡単に管理できます</p>
+    </div>
+    
+    <!-- 統計情報 -->
+    <div class="stats-section">
+        <div class="stat-card account-items">
+            <h3>勘定科目</h3>
+            <div class="stat-value">{{ account_items_count }}</div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">登録済み</p>
+        </div>
+        <div class="stat-card cash-books">
+            <h3>出納帳</h3>
+            <div class="stat-value">{{ cash_books_count }}</div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">取引記録</p>
+        </div>
+        <div class="stat-card import">
+            <h3>インポート</h3>
+            <div class="stat-value">✓</div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">対応中</p>
+        </div>
+    </div>
+    
+    <!-- クイックアクション -->
+    <div class="quick-actions">
+        <h3>よく使う機能</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('cash_books.cash_books_list') }}" class="action-btn">
+                <div class="action-btn-icon">📝</div>
+                <div class="action-btn-label">出納帳を入力</div>
+            </a>
+            <a href="{{ url_for('import_data.import_page') }}" class="action-btn">
+                <div class="action-btn-icon">📥</div>
+                <div class="action-btn-label">ファイルをインポート</div>
+            </a>
+            <a href="{{ url_for('cash_books.cash_books_list') }}" class="action-btn">
+                <div class="action-btn-icon">📊</div>
+                <div class="action-btn-label">出納帳を確認</div>
+            </a>
+            <a href="{{ url_for('account_items.account_items_list') }}" class="action-btn">
+                <div class="action-btn-icon">📑</div>
+                <div class="action-btn-label">勘定科目を管理</div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 機能紹介 -->
+    <div class="features-section">
+        <h3>主な機能</h3>
+        <div class="features-grid">
+            <!-- 勘定科目管理 -->
+            <div class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">📑</div>
+                    <h4>勘定科目管理</h4>
+                </div>
+                <div class="feature-body">
+                    <p>
+                        会計に必要な勘定科目をマスタとして管理します。
+                        freee形式の212個の勘定科目が登録済みです。
+                    </p>
+                    <a href="{{ url_for('account_items.account_items_list') }}">一覧を表示</a>
+                    <a href="{{ url_for('account_items.account_item_create') }}" class="secondary">新規追加</a>
+                </div>
+            </div>
+            
+            <!-- 出納帳入力 -->
+            <div class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">📝</div>
+                    <h4>出納帳入力</h4>
+                </div>
+                <div class="feature-body">
+                    <p>
+                        日々の現金・預金の出入りを記録します。
+                        勘定科目マスタと連携して、詳細な取引情報を管理できます。
+                    </p>
+                    <a href="{{ url_for('cash_books.cash_books_list') }}">一覧を表示</a>
+                    <a href="{{ url_for('cash_books.cash_book_create') }}" class="secondary">新規追加</a>
+                </div>
+            </div>
+            
+            <!-- データインポート -->
+            <div class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">📥</div>
+                    <h4>データインポート</h4>
+                </div>
+                <div class="feature-body">
+                    <p>
+                        銀行やクレジットカードの明細をCSV/Excel形式で
+                        インポートできます。マッピング設定を保存して再利用可能です。
+                    </p>
+                    <a href="{{ url_for('import_data.import_page') }}">インポート開始</a>
+                    <a href="{{ url_for('import_data.import_templates_list') }}" class="secondary">テンプレート管理</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 情報ボックス -->
+    <div class="info-box">
+        <strong>💡 ヒント:</strong> 
+        初めてご利用の場合は、まず「勘定科目管理」で勘定科目を確認してから、
+        「データインポート」で銀行明細をインポートするか、「出納帳入力」で手動入力してください。
+    </div>
+</div>
+{% endblock %}

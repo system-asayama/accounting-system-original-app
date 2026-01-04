@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}テナント管理者ダッシュボード{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px">
+  <div style="font-size:1.2em;font-weight:bold;color:#666">{{ tenant_name if tenant_name else 'テナント名' }}</div>
+  <h1 style="margin-top:12px">テナント管理者ダッシュボード</h1>
+</div>
+
+<div class="card">
+  <h2>ようこそ、{{ session.user_name }}さん</h2>
+  {% if session.role == 'system_admin' %}
+    <p>システム管理者としてログインしています。</p>
+  {% else %}
+    <p>テナント管理者としてログインしています。</p>
+  {% endif %}
+  
+  <div style="margin-top:20px">
+    <h3>ロール情報</h3>
+    <ul>
+      <li><strong>ユーザーID:</strong> {{ session.user_id }}</li>
+      <li><strong>氏名:</strong> {{ session.user_name }}</li>
+      <li><strong>ロール:</strong> {{ session.role }}</li>
+      <li><strong>テナントID:</strong> {{ tenant_id }}</li>
+    </ul>
+  </div>
+
+  <div style="margin-top:30px">
+    <h3>管理機能</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">
+      <a class="card" href="{{ url_for('tenant_admin.tenant_apps') }}" style="text-decoration:none">
+        <h4>利用可能アプリ一覧</h4>
+        <p class="small" style="color:#666">利用可能なアプリの一覧を表示</p>
+      </a>
+      <a class="card" href="{{ url_for('tenant_admin.tenant_info') }}" style="text-decoration:none">
+        <h4>テナント情報</h4>
+        <p class="small" style="color:#666">テナント情報の表示・編集</p>
+      </a>
+      <a class="card" href="{{ url_for('tenant_admin.tenant_admins') }}" style="text-decoration:none">
+        <h4>テナント管理者管理</h4>
+        <p class="small" style="color:#666">テナント管理者の作成・編集・削除</p>
+      </a>
+      <a class="card" href="{{ url_for('tenant_admin.stores') }}" style="text-decoration:none">
+        <h4>店舗管理</h4>
+        <p class="small" style="color:#666">店舗の作成・編集・削除</p>
+      </a>
+      <a class="card" href="{{ url_for('tenant_admin.app_management') }}" style="text-decoration:none">
+        <h4>店舗アプリ管理</h4>
+        <p class="small" style="color:#666">店舗別アプリ使用設定</p>
+      </a>
+    </div>
+  </div>
+
+  <div style="margin-top:30px">
+    <a class="btn sub" href="{{ mypage_url }}">マイページ</a>
+    <a class="btn" href="{{ url_for('auth.logout') }}">ログアウト</a>
+  </div>
+</div>
+
+{% if get_flashed_messages() %}
+<div style="margin-top:20px">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

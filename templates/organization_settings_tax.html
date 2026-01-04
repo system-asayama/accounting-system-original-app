@@ -1,0 +1,103 @@
+            <!-- タブ4: 消費税設定 -->
+            <div id="tax-settings" class="tab-content">
+                <form method="POST" action="/organization_settings" class="settings-form">
+                    <input type="hidden" name="tab" value="tax-settings">
+
+                    <!-- 消費税の設定 -->
+                    <div class="form-section">
+                        <h3>消費税の設定</h3>
+                    </div>
+
+                    <!-- 会計処理の設定 -->
+                    <div class="form-section">
+                        <h3>会計処理の設定</h3>
+                        <div class="form-group">
+                            <div class="form-item">
+                                <label>消費税の経理処理</label>
+                                <select name="tax_accounting_method">
+                                    <option value="tax_included">税抜経理</option>
+                                    <option value="tax_excluded">税込経理</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label>消費税の端数処理</label>
+                                <select name="tax_rounding">
+                                    <option value="cut_off">切り捨て</option>
+                                    <option value="round">四捨五入</option>
+                                    <option value="round_up">切り上げ</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 消費税申告の事前設定 -->
+                    <div class="form-section">
+                        <h3>消費税申告の事前設定</h3>
+                        <p style="margin: 10px 0; font-size: 14px; color: #666;">課税事業者は、課税方式を選択しましょう。適格請求書発行事業者（インボイス発行事業者）も対象となります。</p>
+                        
+                        <div class="form-group">
+                            <div class="form-item">
+                                <label>課税方式と事業区分</label>
+                                <select name="tax_filing_method">
+                                    <option value="general">一般課税（全額控除）</option>
+                                    <option value="simplified">簡易課税</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" style="background: none; border: none; color: #0066cc; cursor: pointer; padding: 0; text-decoration: none; font-size: 14px;">+ 消費税選択制度メモを追加</button>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-item">
+                                <label>簡易課税の事業区分</label>
+                                <select name="simplified_tax_category">
+                                    <option value="category5">第五種：金融・保険業、連絡通</option>
+                                    <option value="category1">第一種：卸売業</option>
+                                    <option value="category2">第二種：小売業</option>
+                                    <option value="category3">第三種：農業、鉱業、建設業、製造業</option>
+                                    <option value="category4">第四種：飲食店業、その他</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group full">
+                            <div class="form-item">
+                                <label style="display: block; margin-bottom: 10px;">保存時に「課税方式」に従い実行する処理</label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" name="update_tax_rate_on_save">
+                                    <span>全年度中に登録した取引の税区分を一括更新</span>
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" name="update_tax_category_on_save">
+                                    <span>勘定科目の税区分を一括更新</span>
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" name="update_tax_use_on_save">
+                                    <span>税区分の「使用」を一括更新</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 消費税申告の計算方式 -->
+                    <div class="form-section">
+                        <h3>消費税申告の計算方式</h3>
+                        <div class="form-group">
+                            <div class="form-item">
+                                <label>計算方式</label>
+                                <select name="tax_calculation_method">
+                                    <option value="sales_minus_purchases">売上（割戻し）× 仕入（割戻し）</option>
+                                    <option value="other">その他</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" onclick="window.history.back()">キャンセル</button>
+                        <button type="submit" class="btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:12px;">店舗管理ページ</h2>
+<p class="small" style="color:#666; margin-top:0;">
+  {% if store_name %}店舗: <strong>{{ store_name }}</strong>{% endif %}
+  {% if sid %}（ID: {{ sid }}）{% endif %}
+</p>
+
+<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+
+  <!-- ▼ KDS管理カード（ボタン文言を「開く」に変更） -->
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <div style="font-size:22px;">🍳</div>
+      <div style="font-weight:600; font-size:16px;">KDS管理</div>
+    </div>
+    <div class="small" style="color:#666; margin-bottom:12px;">
+      KDSのカテゴリ作成とメニュー割当
+    </div>
+    <div class="actions">
+      {% if has_endpoint('admin_kds_home') %}
+        <a class="btn" href="{{ url_for('survey_admin.admin_kds_home') }}">開く</a>
+      {% else %}
+        <span class="btn sub" aria-disabled="true" title="未実装">開く</span>
+      {% endif %}
+    </div>
+  </div>
+  <!-- ▲ ここまで -->
+
+  <!-- ▼ テーブル売上履歴（新規カード） -->
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <div style="font-size:22px;">🧾</div>
+      <div style="font-weight:600; font-size:16px;">テーブル売上履歴</div>
+    </div>
+    <div class="small" style="color:#666; margin-bottom:12px;">
+      テーブルごとの売上・伝票履歴を期間指定で確認できます
+    </div>
+    <div class="actions">
+      {% if has_endpoint('admin_table_sales') %}
+        <a class="btn" href="{{ url_for('survey_admin.admin_table_sales') }}">開く</a>
+      {% else %}
+        <span class="btn sub" aria-disabled="true" title="未実装">開く</span>
+      {% endif %}
+    </div>
+  </div>
+  <!-- ▲ ここまで -->
+
+  {% for t in tiles %}
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <div style="font-size:22px;">{{ t.emoji }}</div>
+      <div style="font-weight:600; font-size:16px;">{{ t.title }}</div>
+    </div>
+
+    {% if t.desc %}
+      <div class="small" style="color:#666; margin-bottom:12px;">{{ t.desc }}</div>
+    {% endif %}
+
+    <div class="actions">
+      {% if t.actions %}
+        {% for a in t.actions %}
+          {% set ep = a.endpoint %}
+          {% set label = a.label or '開く' %}
+          {% set variant = a.variant or '' %}
+          {% if ep and has_endpoint(ep) %}
+            <a class="btn {{ 'sub' if variant=='sub' else '' }}" href="{{ url_for(ep) }}">{{ label }}</a>
+          {% else %}
+            <span class="btn sub" aria-disabled="true" title="未実装">{{ label }}</span>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {% if t.endpoint and has_endpoint(t.endpoint) %}
+          <a class="btn" href="{{ url_for(t.endpoint) }}">{{ t.cta or '開く' }}</a>
+        {% else %}
+          <span class="small" style="color:#9ca3af">リンク未設定（または未実装）</span>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

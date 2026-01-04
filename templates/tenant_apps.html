@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}テナントアプリ管理{% endblock %}
+{% block content %}
+<style>
+  .app-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .app-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+  }
+  
+  .app-table thead tr {
+    background: #f5f5f5;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  .app-table th {
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  
+  .app-table tbody tr {
+    border-bottom: 1px solid #eee;
+  }
+  
+  .app-table td {
+    padding: 8px;
+    white-space: nowrap;
+  }
+  
+  .app-table td.app-name {
+    font-weight: bold;
+  }
+  
+  .app-table td.app-description {
+    color: #666;
+  }
+  
+  .app-table .btn.small {
+    font-size: 0.9em;
+    padding: 4px 8px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  
+  /* スマホ用カード型レイアウト */
+  @media (max-width: 768px) {
+    .app-table-wrapper {
+      overflow-x: visible;
+    }
+    
+    .app-table thead {
+      display: none;
+    }
+    
+    .app-table tbody {
+      display: block;
+    }
+    
+    .app-table tbody tr {
+      display: block;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    
+    .app-table td {
+      display: block;
+      padding: 8px 0;
+      white-space: normal;
+      border: none;
+    }
+    
+    .app-table td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      display: inline-block;
+      width: 100px;
+      color: #374151;
+    }
+    
+    .app-table td.app-name {
+      font-size: 1.1em;
+      padding-bottom: 12px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .app-table td.app-name::before {
+      display: none;
+    }
+    
+    .app-table td.app-actions {
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .app-table td.app-actions::before {
+      display: none;
+    }
+    
+    .app-table .btn.small {
+      display: inline-block;
+      margin: 4px 4px 4px 0;
+      font-size: 0.9em;
+      padding: 8px 12px;
+    }
+  }
+</style>
+
+<h1>テナントアプリ管理</h1>
+
+<div class="card">
+  <h2>{{ tenant['名称'] }}</h2>
+  <p class="small" style="color:#666;margin-top:8px">
+    テナントID: {{ tenant.id }} / Slug: {{ tenant.slug }}
+  </p>
+</div>
+
+{% if apps %}
+<div class="app-table-wrapper" style="margin-top:20px">
+  <table class="app-table">
+    <thead>
+      <tr>
+        <th>アプリID</th>
+        <th>名称</th>
+        <th>説明</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in apps %}
+      <tr>
+        <td data-label="アプリID:">{{ app.id }}</td>
+        <td data-label="名称:" class="app-name">
+          <a href="{{ app.url }}">{{ app.name }}</a>
+        </td>
+        <td data-label="説明:" class="app-description">{{ app.description }}</td>
+        <td data-label="" class="app-actions">
+          <a class="btn small" href="{{ app.url }}">開く</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:20px">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="9" y1="9" x2="15" y2="9"></line>
+    <line x1="9" y1="15" x2="15" y2="15"></line>
+  </svg>
+  <h3 style="color:#666;margin-bottom:10px">利用可能なアプリはありません</h3>
+  <p style="color:#999">現在、このテナントで利用できるアプリはありません。</p>
+</div>
+{% endif %}
+
+<div style="margin-top:20px">
+  <a class="btn sub" href="{{ url_for('tenant_admin.tenant_info') }}">テナント情報に戻る</a>
+</div>
+{% endblock %}
